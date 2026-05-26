@@ -1,0 +1,11 @@
+fastapi>=0.100.0
+uvicorn>=0.22.0
+pydantic>=2.0
+pydantic-settings>=2.0.0
+pandas>=2.0.0
+numpy>=1.22.0
+scikit-learn>=1.2.0
+torch>=2.0.0
+shap>=0.42.0
+asyncpg>=0.28.0
+httpx>=0.24.0

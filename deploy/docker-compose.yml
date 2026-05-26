@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: threat_detection_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: threat_detection
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d threat_detection"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ../
+      dockerfile: deploy/Dockerfile
+    container_name: threat_detection_app
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/threat_detection
+      - MODEL_DIR=/app/data/models/
+      - CIC_DATA_DIR=/app/data/cic/
+      - UNSW_DATA_DIR=/app/data/unsw/
+      - CSE_DATA_DIR=/app/data/cse/
+      - L1_ANOMALY_THRESHOLD=2.5
+      - L1_EWMA_ALPHA=0.2
+      - L1_ROLLING_WINDOW_SIZE=100
+      - L3_WINDOW_SIZE=10
+    volumes:
+      - ../data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+    driver: local
