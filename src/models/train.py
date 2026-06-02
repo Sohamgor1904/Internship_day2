@@ -31,24 +31,49 @@ def main():
     # Initialize stateful feature pipeline
     feature_pipeline = StreamingFeaturePipeline(window_size=settings.L1_ROLLING_WINDOW_SIZE)
     
-    # Load and map datasets (sample 6,000 rows from each to remain memory-efficient)
+    # Define baseline date windows for training each source dataset
+    import datetime
+    now = datetime.datetime.utcnow()
+    
+    baseline_windows = {
+        "unsw": (
+            (now - datetime.timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S"),
+            (now + datetime.timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S")
+        ),
+        "cse": ("2018-02-14 00:00:00", "2018-02-16 23:59:59"),
+        "cic": (
+            (now - datetime.timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S"),
+            (now + datetime.timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S")
+        )
+    }
+    
+    # Ingest data from the defined date baseline windows (sampling up to 6,000 records from each for memory efficiency)
     records_per_dataset = 6000
-    print(f"Ingesting datasets (sampling up to {records_per_dataset} rows per source)...")
+    print("Ingesting datasets from baseline training date windows...")
     
     all_events = []
     
-    print("- Reading CICIDS2017...")
-    cic_events = list(ingestor.stream_dataset("cic", max_records=records_per_dataset))
+    print(f"- Reading CICIDS2017 baseline ({baseline_windows['cic'][0]} to {baseline_windows['cic'][1]})...")
+    cic_events = list(ingestor.stream_dataset(
+        "cic", max_records=records_per_dataset, 
+        start_date=baseline_windows['cic'][0], end_date=baseline_windows['cic'][1]
+    ))
     print(f"  Loaded {len(cic_events)} OCSF records.")
     all_events.extend(cic_events)
     
-    print("- Reading UNSW-NB15...")
-    unsw_events = list(ingestor.stream_dataset("unsw", max_records=records_per_dataset))
+    print(f"- Reading UNSW-NB15 baseline ({baseline_windows['unsw'][0]} to {baseline_windows['unsw'][1]})...")
+    unsw_events = list(ingestor.stream_dataset(
+        "unsw", max_records=records_per_dataset,
+        start_date=baseline_windows['unsw'][0], end_date=baseline_windows['unsw'][1]
+    ))
     print(f"  Loaded {len(unsw_events)} OCSF records.")
     all_events.extend(unsw_events)
     
-    print("- Reading CSE-CIC-IDS2018...")
-    cse_events = list(ingestor.stream_dataset("cse", max_records=records_per_dataset))
+    print(f"- Reading CSE-CIC-IDS2018 baseline ({baseline_windows['cse'][0]} to {baseline_windows['cse'][1]})...")
+    cse_events = list(ingestor.stream_dataset(
+        "cse", max_records=records_per_dataset,
+        start_date=baseline_windows['cse'][0], end_date=baseline_windows['cse'][1]
+    ))
     print(f"  Loaded {len(cse_events)} OCSF records.")
     all_events.extend(cse_events)
     
@@ -257,8 +282,9 @@ def main():
                 for k, v in lstm_model.state_dict().items()
             }
             epochs_no_improve = 0
-            print(f"  Epoch {epoch+1:02d}/{epochs} - Loss: {avg_loss:.4f} ✅ Best")
+            print(f"  Epoch {epoch+1:02d}/{epochs} - Loss: {avg_loss:.4f} - Best")
         else:
+
             epochs_no_improve += 1
             print(f"  Epoch {epoch+1:02d}/{epochs} - Loss: {avg_loss:.4f} "
                   f"(no improvement {epochs_no_improve}/{patience})")
@@ -315,6 +341,14 @@ def main():
     )
     
     print("\nModel Training Pipeline Completed Successfully!")
+    
+    # Auto-generate the PDF Performance Report
+    print("\nCompiling automated model evaluation PDF report...")
+    try:
+        from src.reporting.generator import generate_pdf_report
+        generate_pdf_report()
+    except Exception as e:
+        print(f"[WARNING] Failed to generate automated PDF report: {e}")
 
 if __name__ == "__main__":
     main()

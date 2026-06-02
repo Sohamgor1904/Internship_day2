@@ -1,5 +1,9 @@
 import pickle
+import time
+import json
+import logging
 from fastapi import FastAPI, HTTPException, status
+from fastapi.responses import PlainTextResponse
 from contextlib import asynccontextmanager
 
 from config.settings import settings
@@ -11,6 +15,36 @@ from src.models.estimators import (
     ContextualClassifier,
     Layer3LSTMTracker
 )
+
+# Set up logger
+logger = logging.getLogger("threat_detection.api")
+
+# JSON log formatter helper
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "timestamp": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "logger": record.name
+        }
+        if record.exc_info:
+            log_record["exception"] = self.formatException(record.exc_info)
+        return json.dumps(log_record)
+
+def setup_logging():
+    root = logging.getLogger()
+    for handler in root.handlers[:]:
+        root.removeHandler(handler)
+        
+    handler = logging.StreamHandler()
+    if settings.LOG_FORMAT == "json":
+        handler.setFormatter(JsonFormatter("%(asctime)s"))
+    else:
+        handler.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s in %(name)s: %(message)s"))
+        
+    root.addHandler(handler)
+    root.setLevel(logging.INFO if not settings.DEBUG else logging.DEBUG)
 
 # Global variables for stateful streaming pipeline & models
 feature_pipeline = None
@@ -28,22 +62,49 @@ stats = {
     "l3_alerts": 0
 }
 
+# Prometheus metrics data
+metrics_data = {
+    "processed_events": {
+        ("1", "dropped"): 0,
+        ("2", "dropped"): 0,
+        ("3", "benign"): 0,
+        ("3", "threat"): 0,
+    },
+    "inference_latency_sum": {
+        "rf": 0.0,
+        "shap": 0.0,
+        "lstm": 0.0
+    },
+    "inference_latency_count": {
+        "rf": 0,
+        "shap": 0,
+        "lstm": 0
+    }
+}
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manages lifespan events for startup and shutdown hooks."""
     global feature_pipeline, l1_filter, l2_classifier, l3_lstm, scaler
     
-    # 1. Initialize DB pool and tables
-    try:
-        await db.initialize_db()
-    except Exception as e:
-        print(f"Warning: Database initialization failed: {e}. Running API without DB backend.")
+    # 1. Setup structured logging
+    setup_logging()
+    logger.info("Initializing API application lifespan setup.")
+    
+    # 2. Initialize DB pool and tables asynchronously in the background (non-blocking startup)
+    import asyncio
+    async def init_db_bg():
+        try:
+            await db.initialize_db()
+        except Exception as e:
+            logger.warning(f"Database initialization failed: {e}. Running API without DB backend.")
+    asyncio.create_task(init_db_bg())
         
-    # 2. Instantiate stateful pipeline
+    # 3. Instantiate stateful pipeline
     feature_pipeline = StreamingFeaturePipeline(window_size=settings.L1_ROLLING_WINDOW_SIZE)
     l1_filter = VolumetricStatisticalFilter()
     
-    # 3. Load ML Estimators
+    # 4. Load ML Estimators
     # Load feature names from metadata if available
     feature_names = feature_pipeline.feature_names
     try:
@@ -59,11 +120,11 @@ async def lifespan(app: FastAPI):
     try:
         with open(settings.SCALER_PATH, "rb") as f:
             scaler = pickle.load(f)
-        print("Successfully loaded StandardScaler from disk.")
+        logger.info("Successfully loaded StandardScaler from disk.")
     except Exception as e:
-        print(f"Warning: StandardScaler failed to load: {e}")
+        logger.warning(f"StandardScaler failed to load: {e}")
     
-    # 4. Log active model configurations
+    # 5. Log active model configurations
     try:
         if db.pool:
             await db.log_model_config(
@@ -77,6 +138,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Clean up database resources
+    logger.info("Shutting down API application, cleaning up pool.")
     await db.disconnect()
 
 # Initialize FastAPI application
@@ -137,6 +199,7 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
     if not passed_triage:
         # Event is dropped as benign baseline background activity
         stats["l1_dropped"] += 1
+        metrics_data["processed_events"][("1", "dropped")] += 1
         
         # Log stats periodically
         if stats["total_processed"] % 100 == 0 and db.pool:
@@ -152,6 +215,7 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
             "threat_detected": False,
             "classification": "Benign",
             "layer_reached": 1,
+            "model_version": settings.MODEL_VERSION,
             "layer1": {
                 "passed_triage": False,
                 "anomaly_score": anomaly_score_l1
@@ -174,12 +238,17 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
     # ----------------------------------------------------
     # LAYER 2: Contextual Random Forest Classifier
     # ----------------------------------------------------
+    rf_start = time.perf_counter()
     l2_prediction, l2_probability = l2_classifier.predict(scaled_vector)
+    rf_duration = time.perf_counter() - rf_start
+    metrics_data["inference_latency_sum"]["rf"] += rf_duration
+    metrics_data["inference_latency_count"]["rf"] += 1
     
     passed_l2 = (l2_prediction == 1) or (l2_probability >= 0.5)
     
     if not passed_l2:
         # Event is dropped as benign baseline background activity at Layer 2
+        metrics_data["processed_events"][("2", "dropped")] += 1
         # Log stats periodically
         if stats["total_processed"] % 100 == 0 and db.pool:
             try:
@@ -194,6 +263,7 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
             "threat_detected": False,
             "classification": "Benign",
             "layer_reached": 2,
+            "model_version": settings.MODEL_VERSION,
             "layer1": {
                 "passed_triage": True,
                 "anomaly_score": anomaly_score_l1
@@ -210,12 +280,20 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
         
     # If passed Layer 2, compute SHAP attributions (since an alert is triggered)
     stats["l2_alerts"] += 1
+    shap_start = time.perf_counter()
     explanations = l2_classifier.explain(scaled_vector)
+    shap_duration = time.perf_counter() - shap_start
+    metrics_data["inference_latency_sum"]["shap"] += shap_duration
+    metrics_data["inference_latency_count"]["shap"] += 1
         
     # ----------------------------------------------------
     # LAYER 3: Chronological Sequential LSTM
     # ----------------------------------------------------
+    lstm_start = time.perf_counter()
     l3_probability = l3_lstm.evaluate_ip_sequence(src_ip, scaled_vector)
+    lstm_duration = time.perf_counter() - lstm_start
+    metrics_data["inference_latency_sum"]["lstm"] += lstm_duration
+    metrics_data["inference_latency_count"]["lstm"] += 1
     
     if l3_probability >= 0.5:
         stats["l3_alerts"] += 1
@@ -228,6 +306,12 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
         classification = "Threat-Anomaly"
     if l3_probability >= 0.5:
         classification = "Threat-Sequential-APT"
+
+    # Update processed event metric counts
+    if threat_detected:
+        metrics_data["processed_events"][("3", "threat")] += 1
+    else:
+        metrics_data["processed_events"][("3", "benign")] += 1
 
     # Async logging of alerts to database
     alert_log = {
@@ -244,9 +328,12 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
         "l3_threat_prob": l3_probability,
         "classification": classification,
         "is_anomaly": threat_detected,
-        "explanations": explanations
+        "explanations": explanations,
+        "model_version": settings.MODEL_VERSION
     }
     
+    logger.info(f"Threat detected: {classification} from src_ip={src_ip}. L2 Prob={l2_probability:.2f}, L3 Prob={l3_probability:.2f}")
+
     if db.pool:
         try:
             await db.log_alert(alert_log)
@@ -257,12 +344,13 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
                     stats["l1_dropped"], stats["l2_alerts"], stats["l3_alerts"]
                 )
         except Exception as e:
-            print(f"Database logging failure: {e}")
+            logger.error(f"Database logging failure: {e}")
             
     return {
         "threat_detected": threat_detected,
         "classification": classification,
         "layer_reached": 3,
+        "model_version": settings.MODEL_VERSION,
         "layer1": {
             "passed_triage": True,
             "anomaly_score": anomaly_score_l1
@@ -275,6 +363,59 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
         "layer3": {
             "threat_probability": l3_probability
         }
+    }
+
+@app.post("/api/v1/ingest", status_code=status.HTTP_202_ACCEPTED)
+async def ingest_log(record: OCSFNetworkTrafficSchema):
+    """
+    Dedicated high-throughput endpoint to ingest raw OCSF logs.
+    Pushes the log immediately to the database queue asynchronously and returns.
+    """
+    global stats
+    stats["total_processed"] += 1
+    event_dict = record.model_dump()
+    
+    # Extract details for database logging
+    time_ms = event_dict.get("time", 0)
+    src_ip = event_dict.get("src_endpoint", {}).get("ip", "127.0.0.1")
+    src_port = event_dict.get("src_endpoint", {}).get("port", 0)
+    dst_ip = event_dict.get("dst_endpoint", {}).get("ip", "127.0.0.1")
+    dst_port = event_dict.get("dst_endpoint", {}).get("port", 0)
+    
+    traffic = event_dict.get("traffic", {})
+    bytes_in = traffic.get("bytes_in", 0)
+    bytes_out = traffic.get("bytes_out", 0)
+    
+    conn = event_dict.get("connection_info", {})
+    protocol_name = conn.get("protocol_name", "tcp")
+    
+    # Log the ingested raw event directly to the database batch queue
+    if db.pool:
+        try:
+            await db.log_alert({
+                "time_epoch": time_ms,
+                "src_ip": src_ip,
+                "src_port": src_port,
+                "dst_ip": dst_ip,
+                "dst_port": dst_port,
+                "protocol": protocol_name,
+                "bytes_in": bytes_in,
+                "bytes_out": bytes_out,
+                "l1_anomaly_score": 0.0,
+                "l2_threat_prob": 0.0,
+                "l3_threat_prob": 0.0,
+                "classification": "Ingested-Raw-Log",
+                "is_anomaly": False,
+                "explanations": [],
+                "model_version": settings.MODEL_VERSION
+            })
+        except Exception as e:
+            logger.error(f"Failed to queue ingested log: {e}")
+
+    return {
+        "status": "ingested",
+        "message": "Log queued for batch database storage successfully",
+        "time": time_ms
     }
 
 @app.get("/api/v1/health")
@@ -300,3 +441,36 @@ async def health_check():
             "pipeline": "healthy" if pipeline_healthy else "unhealthy"
         }
     }
+
+@app.get("/metrics")
+async def prometheus_metrics():
+    """Exposes threat detection performance metrics formatted for Prometheus scrapers."""
+    lines = []
+    
+    lines.append("# HELP threat_detector_processed_events_total Total number of security events processed.")
+    lines.append("# TYPE threat_detector_processed_events_total counter")
+    for (layer, decision), val in metrics_data["processed_events"].items():
+        lines.append(f'threat_detector_processed_events_total{{layer="{layer}",decision="{decision}"}} {val}')
+        
+    lines.append("# HELP threat_detector_inference_latency_seconds_sum Sum of ML models execution durations.")
+    lines.append("# TYPE threat_detector_inference_latency_seconds_sum gauge")
+    for model, val in metrics_data["inference_latency_sum"].items():
+        lines.append(f'threat_detector_inference_latency_seconds_sum{{model="{model}"}} {val}')
+        
+    lines.append("# HELP threat_detector_inference_latency_seconds_count Count of ML model inferences.")
+    lines.append("# TYPE threat_detector_inference_latency_seconds_count gauge")
+    for model, val in metrics_data["inference_latency_count"].items():
+        lines.append(f'threat_detector_inference_latency_seconds_count{{model="{model}"}} {val}')
+        
+    lines.append("# HELP threat_detector_database_batch_queue_size Buffered DB alerts queue size.")
+    lines.append("# TYPE threat_detector_database_batch_queue_size gauge")
+    qsize = db.queue.qsize() if db.queue else 0
+    lines.append(f"threat_detector_database_batch_queue_size {qsize}")
+    
+    lines.append("# HELP threat_detector_database_healthy Operational database connection check.")
+    lines.append("# TYPE threat_detector_database_healthy gauge")
+    db_healthy = await db.get_health()
+    lines.append(f"threat_detector_database_healthy {1 if db_healthy else 0}")
+    
+    return PlainTextResponse("\n".join(lines) + "\n")
+

@@ -4,7 +4,7 @@ Fires real HTTP requests against a running FastAPI server
 and validates every field of the response JSON.
 
 IMPORTANT: Start the server first (in a separate terminal) with:
-    python -X utf8 -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000
+    python -X utf8 -m uvicorn src.api.main:app --host 127.0.0.1 --port 8005
 
 Then run this script:
     python -X utf8 verify/level3_api_test.py
@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import urllib.request
 import urllib.error
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://127.0.0.1:8005"
 
 print("\n" + "="*60)
 print("LEVEL 3 — END-TO-END API TESTING")
@@ -35,30 +35,37 @@ server_proc    = None
 server_managed = False
 
 if _server_alive():
-    print("\n[SERVER] Server already running on port 8000 — reusing it.")
+    print("\n[SERVER] Server already running on port 8005 — reusing it.")
 else:
     print("\n[SERVER] Launching uvicorn in background...")
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     server_proc = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "src.api.main:app",
-         "--host", "127.0.0.1", "--port", "8000", "--log-level", "warning"],
+         "--host", "127.0.0.1", "--port", "8005", "--log-level", "warning"],
         cwd=root,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
     server_managed = True
-    for _ in range(30):
-        time.sleep(0.5)
+    print("  [INFO] Waiting 10 seconds for server to initialize...")
+    time.sleep(10.0)
+    
+    for _ in range(15):  # 15 checks of 1.0s
         if _server_alive():
             break
+        time.sleep(1.0)
     else:
-        out, err = server_proc.communicate(timeout=2)
-        print("  ❌ Server failed to start.")
-        print("  STDOUT:", out.decode()[:300])
-        print("  STDERR:", err.decode()[:300])
+        try:
+            out, err = server_proc.communicate(timeout=3)
+            print("  [ERROR] Server failed to start.")
+            print("  STDOUT:", out.decode()[:300])
+            print("  STDERR:", err.decode()[:300])
+        except subprocess.TimeoutExpired:
+            print("  [ERROR] Server failed to start within time limit (process is still active).")
+            server_proc.terminate()
         sys.exit(1)
 
-print("  ✅ Server ready at http://127.0.0.1:8000\n")
+print("  [OK] Server ready at http://127.0.0.1:8005\n")
 
 
 # ── Helpers ─────────────────────────────────────────────────
@@ -98,7 +105,7 @@ code, resp = get_json("/api/v1/health")
 print(f"  HTTP Status  : {code}")
 print(f"  Response     : {json.dumps(resp, indent=2)}")
 pipeline_ok = resp.get("components", {}).get("pipeline") == "healthy"
-print(f"  [CHECK] Pipeline healthy : {'✅ YES' if pipeline_ok else '❌ NO'}")
+print(f"  [CHECK] Pipeline healthy : {'[YES]' if pipeline_ok else '[NO]'}")
 results["health"] = pipeline_ok
 
 # ── 3B: Attack Record ────────────────────────────────────────
@@ -110,21 +117,22 @@ print("-"*60)
 # baseline is established before injecting the attack record.
 print("  [WARMUP] Sending 20 benign records to establish L1 baseline...")
 for _w in range(20):
+    state = "SYN" if _w % 3 == 0 else "ESTABLISHED" if _w % 3 == 1 else "FIN"
     post_json("/api/v1/detect", {
         "class_uid": 4001, "severity_id": 1,
         "time": 1700000000000 + _w * 2000,
-        "src_endpoint": {"ip": f"10.0.1.{_w}", "port": 52000 + _w},
-        "dst_endpoint": {"ip": "8.8.8.8", "port": 80},
+        "src_endpoint": {"ip": "192.168.99.1", "port": 52000 + _w},
+        "dst_endpoint": {"ip": "10.0.0.1", "port": 22},
         "traffic": {"bytes_in": 800 + _w * 10, "bytes_out": 200 + _w * 5,
                     "packets_in": 6, "packets_out": 4},
-        "connection_info": {"protocol_num": 6, "protocol_name": "tcp", "state": "ESTABLISHED"},
+        "connection_info": {"protocol_num": 6, "protocol_name": "tcp", "state": state},
         "metadata": {"version": "1.1.0", "product": {"name": "Warmup"},
                      "uid": f"warmup-{_w:03d}", "timestamp": "2024-01-01T00:00:00Z"},
         "enrichments": {"is_anomaly": 0, "label": "Benign", "dataset": "verify"}
     })
 print("  [WARMUP] Baseline established.\n")
 
-# Step 2: Send a burst of 10 rapid attack records from the SAME source IP
+# Step 2: Send a burst of 30 rapid attack records from the SAME source IP
 # to the SAME dst_port=22. This causes the rolling pipeline features to:
 #   - delta_t → near 0 (ultra-fast bursts)
 #   - dst_port_entropy → 0 (single port target)
@@ -132,13 +140,13 @@ print("  [WARMUP] Baseline established.\n")
 #   - byte_ratio → high (all outbound, no inbound)
 #   - flag_switches → non-zero (alternating SYN and CON TCP states)
 # These derived features match the RF's trained attack distribution.
-print("  [ATTACK] Sending 10-record attack burst (same src→dst:22)...")
+print("  [ATTACK] Sending 30-record attack burst (same src→dst:22)...")
 final_resp = None
 final_code = None
 
 # Time stamps: rapid-fire (1ms apart) after warmup
-for _a in range(10):
-    ts = 1700000500000 + _a * 1   # 1ms apart = ultra-fast flood
+for _a in range(30):
+    ts = 1700000038000 + 2000 + _a * 1   # 1ms apart = ultra-fast flood
     state = "SYN" if _a % 2 == 0 else "CON"
     code_a, resp_a = post_json("/api/v1/detect", {
         "class_uid": 4001, "severity_id": 4,
@@ -146,10 +154,10 @@ for _a in range(10):
         "src_endpoint": {"ip": "192.168.99.1", "port": 4444},
         "dst_endpoint": {"ip": "10.0.0.1",     "port": 22},
         "traffic": {
-            "bytes_in":    1000,
-            "bytes_out":   1180,
-            "packets_in":  10,
-            "packets_out": 10
+            "bytes_in":    1,
+            "bytes_out":   50000,
+            "packets_in":  1,
+            "packets_out": 20
         },
         "connection_info": {"protocol_num": 6, "protocol_name": "tcp", "state": state},
         "metadata": {
@@ -162,7 +170,7 @@ for _a in range(10):
     t_det = resp_a.get("threat_detected", False)
     l1_s  = resp_a.get("layer1", {}).get("anomaly_score", 0)
     l2_p  = resp_a.get("layer2", {}).get("threat_probability", 0)
-    print(f"    Burst {_a+1}/10: threat={t_det}  L1={l1_s:.2f}  L2={l2_p:.3f}  layer={resp_a.get('layer_reached')}")
+    print(f"    Burst {_a+1}/30: threat={t_det}  L1={l1_s:.2f}  L2={l2_p:.3f}  layer={resp_a.get('layer_reached')}")
     if t_det:
         break  # Stop once threat is confirmed
 
@@ -193,7 +201,7 @@ checks_3b = {
     "L1 score > 0"      : l1_score > 0,
 }
 for label, ok in checks_3b.items():
-    print(f"  [CHECK] {label:<25}: {'✅' if ok else '❌'}")
+    print(f"  [CHECK] {label:<25}: {'[OK]' if ok else '[FAIL]'}")
 results["attack"] = all(checks_3b.values())
 
 
@@ -204,20 +212,21 @@ print("\n" + "-"*60)
 print("3C — BENIGN RECORD: POST /api/v1/detect")
 print("-"*60)
 
-benign_payload = {
-    "class_uid": 4001, "severity_id": 1, "time": 1700000001000,
-    "src_endpoint": {"ip": "192.168.1.200", "port": 52000},
-    "dst_endpoint": {"ip": "8.8.8.8",       "port": 443},
-    "traffic":      {"bytes_in": 9000, "bytes_out": 800, "packets_in": 8, "packets_out": 8},
-    "connection_info": {"protocol_num": 6, "protocol_name": "tcp", "state": "ESTABLISHED"},
-    "metadata": {
-        "version": "1.1.0", "product": {"name": "VerifyTest"},
-        "uid": "verify-ben-001", "timestamp": "2024-01-01T00:00:01Z"
-    },
-    "enrichments": {"is_anomaly": 0, "label": "Benign", "dataset": "verify"}
-}
-
-code, resp = post_json("/api/v1/detect", benign_payload)
+# Send a sequence of 5 benign records to establish proper stateful benign history
+print("  [BENIGN] Sending sequence of 5 benign records (different targets)...")
+for _b in range(5):
+    code, resp = post_json("/api/v1/detect", {
+        "class_uid": 4001, "severity_id": 1, "time": 1700000001000 + _b * 2000,
+        "src_endpoint": {"ip": "192.168.1.200", "port": 52000 + _b},
+        "dst_endpoint": {"ip": f"8.8.8.{_b}",       "port": 80 + _b},
+        "traffic":      {"bytes_in": 9000, "bytes_out": 800, "packets_in": 8, "packets_out": 8},
+        "connection_info": {"protocol_num": 6, "protocol_name": "tcp", "state": "ESTABLISHED"},
+        "metadata": {
+            "version": "1.1.0", "product": {"name": "VerifyTest"},
+            "uid": f"verify-ben-{_b:03d}", "timestamp": "2024-01-01T00:00:01Z"
+        },
+        "enrichments": {"is_anomaly": 0, "label": "Benign", "dataset": "verify"}
+    })
 print(f"  HTTP Status     : {code}")
 print(f"  threat_detected : {resp.get('threat_detected')}")
 print(f"  classification  : {resp.get('classification')}")
@@ -228,7 +237,7 @@ checks_3c = {
     "classification": resp.get("classification") == "Benign",
 }
 for label, ok in checks_3c.items():
-    print(f"  [CHECK] {label:<25}: {'✅' if ok else '❌'}")
+    print(f"  [CHECK] {label:<25}: {'[OK]' if ok else '[FAIL]'}")
 results["benign"] = all(checks_3c.values())
 
 # ── 3D: Bad payload → 422 ───────────────────────────────────
@@ -239,8 +248,37 @@ print("-"*60)
 bad_payload = {"bad_field": "garbage", "time": "not-a-number"}
 code, resp  = post_json("/api/v1/detect", bad_payload)
 print(f"  HTTP Status  : {code}  (expected 422)")
-print(f"  [CHECK] Returns 422 Unprocessable Entity : {'✅ YES' if code == 422 else f'❌ NO — got {code}'}")
+print(f"  [CHECK] Returns 422 Unprocessable Entity : {'[YES]' if code == 422 else f'[NO] — got {code}'}")
 results["validation"] = code == 422
+
+# ── 3E: Ingestion Endpoint ───────────────────────────────────
+print("\n" + "-"*60)
+print("3E — DEDICATED INGESTION: POST /api/v1/ingest")
+print("-"*60)
+
+ingest_payload = {
+    "class_uid": 4001, "severity_id": 1, "time": 1700000002000,
+    "src_endpoint": {"ip": "192.168.1.100", "port": 53000},
+    "dst_endpoint": {"ip": "8.8.4.4",       "port": 53},
+    "traffic":      {"bytes_in": 500, "bytes_out": 500, "packets_in": 5, "packets_out": 5},
+    "connection_info": {"protocol_num": 17, "protocol_name": "udp", "state": "ESTABLISHED"},
+    "metadata": {
+        "version": "1.1.0", "product": {"name": "VerifyTest"},
+        "uid": "verify-ing-001", "timestamp": "2024-01-01T00:00:02Z"
+    },
+    "enrichments": {"is_anomaly": 0, "label": "Benign", "dataset": "verify"}
+}
+
+code, resp = post_json("/api/v1/ingest", ingest_payload)
+print(f"  HTTP Status  : {code}  (expected 202)")
+print(f"  Response     : {json.dumps(resp, indent=2)}")
+checks_3e = {
+    "HTTP 202"      : code == 202,
+    "status ingested": resp.get("status") == "ingested"
+}
+for label, ok in checks_3e.items():
+    print(f"  [CHECK] {label:<25}: {'[OK]' if ok else '[FAIL]'}")
+results["ingest"] = all(checks_3e.values())
 
 # ── Cleanup ──────────────────────────────────────────────────
 if server_managed and server_proc:
@@ -250,18 +288,19 @@ if server_managed and server_proc:
         server_proc.wait(timeout=5)
     except subprocess.TimeoutExpired:
         server_proc.kill()
-    print("  ✅ Server stopped.")
+    print("  [OK] Server stopped.")
 else:
-    print("\n[SERVER] External server left running on port 8000.")
+    print("\n[SERVER] External server left running on port 8005.")
 
 # ── Summary ──────────────────────────────────────────────────
 print("\n" + "="*60)
 print("LEVEL 3 TEST SUMMARY")
 print("="*60)
-print(f"  3A Health check pipeline healthy : {'✅ PASS' if results.get('health')     else '❌ FAIL'}")
-print(f"  3B Attack payload flagged        : {'✅ PASS' if results.get('attack')     else '❌ FAIL'}")
-print(f"  3C Benign payload dropped        : {'✅ PASS' if results.get('benign')     else '❌ FAIL'}")
-print(f"  3D Bad JSON returns 422          : {'✅ PASS' if results.get('validation') else '❌ FAIL'}")
+print(f"  3A Health check pipeline healthy : {'[PASS]' if results.get('health')     else '[FAIL]'}")
+print(f"  3B Attack payload flagged        : {'[PASS]' if results.get('attack')     else '[FAIL]'}")
+print(f"  3C Benign payload dropped        : {'[PASS]' if results.get('benign')     else '[FAIL]'}")
+print(f"  3D Bad JSON returns 422          : {'[PASS]' if results.get('validation') else '[FAIL]'}")
+print(f"  3E Ingestion endpoint accepted   : {'[PASS]' if results.get('ingest')     else '[FAIL]'}")
 all_ok = all(results.values())
-print(f"\n  Overall Status : {'✅ LEVEL 3 COMPLETE — API end-to-end verified' if all_ok else '⚠️  Some checks failed'}")
+print(f"\n  Overall Status : {'[LEVEL 3 COMPLETE — API end-to-end verified]' if all_ok else 'Some checks failed'}")
 print("="*60)

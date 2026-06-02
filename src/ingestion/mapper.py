@@ -225,10 +225,14 @@ class OCSFDataIngestor:
         self.unsw_dir = unsw_dir
         self.cse_dir = cse_dir
 
-    def stream_dataset(self, dataset_name: str, max_records: int = 10000) -> Iterator[Dict[str, Any]]:
+    def stream_dataset(self, dataset_name: str, max_records: int = 1000000, start_date: str = None, end_date: str = None) -> Iterator[Dict[str, Any]]:
         """Yields OCSF standard records from the requested local dataset."""
         dataset_name = dataset_name.lower()
         baseline_time = int(datetime.datetime.utcnow().timestamp() * 1000)
+        
+        # Convert date boundaries to epoch milliseconds
+        start_time_ms = int(pd.to_datetime(start_date).timestamp() * 1000) if start_date else None
+        end_time_ms = int(pd.to_datetime(end_date).timestamp() * 1000) if end_date else None
         
         if dataset_name == "cic":
             files = glob.glob(os.path.join(self.cic_dir, "*.csv"))
@@ -236,20 +240,21 @@ class OCSFDataIngestor:
                 return
             count = 0
             for file_path in files:
-                # Read chunks to keep memory usage low
                 try:
                     for chunk in pd.read_csv(file_path, chunksize=2000):
                         chunk.columns = chunk.columns.str.strip()
                         for i, (_, row) in enumerate(chunk.iterrows()):
-                            yield map_cic_to_ocsf(row.to_dict(), baseline_time, count)
-                            count += 1
-                            if count >= max_records:
-                                return
+                            event = map_cic_to_ocsf(row.to_dict(), baseline_time, count)
+                            if (start_time_ms is None or event["time"] >= start_time_ms) and \
+                               (end_time_ms is None or event["time"] <= end_time_ms):
+                                yield event
+                                count += 1
+                                if count >= max_records:
+                                    return
                 except Exception as e:
                     print(f"Error loading CIC file {file_path}: {e}")
                     
         elif dataset_name == "unsw":
-            # Prefer processed training/testing sets as they are well structured
             files = glob.glob(os.path.join(self.unsw_dir, "*training*.csv"))
             if not files:
                 files = glob.glob(os.path.join(self.unsw_dir, "UNSW-NB15_*.csv"))
@@ -258,11 +263,8 @@ class OCSFDataIngestor:
             count = 0
             for file_path in files:
                 try:
-                    # Raw UNSW-NB15_*.csv files do not have column headers.
-                    # Determine header dynamically based on whether it is raw
                     is_raw = "training" not in file_path.lower() and "testing" not in file_path.lower()
                     if is_raw:
-                        # Raw file, we must assign column names from NUSW-NB15_features.csv
                         col_names = [
                             "srcip", "sport", "dstip", "dsport", "proto", "state", "dur", "sbytes", 
                             "dbytes", "sttl", "dttl", "sloss", "dloss", "service", "sload", "dload", 
@@ -275,18 +277,24 @@ class OCSFDataIngestor:
                         ]
                         for chunk in pd.read_csv(file_path, header=None, names=col_names, chunksize=2000, low_memory=False):
                             for _, row in chunk.iterrows():
-                                yield map_unsw_to_ocsf(row.to_dict())
-                                count += 1
-                                if count >= max_records:
-                                    return
+                                event = map_unsw_to_ocsf(row.to_dict())
+                                if (start_time_ms is None or event["time"] >= start_time_ms) and \
+                                   (end_time_ms is None or event["time"] <= end_time_ms):
+                                    yield event
+                                    count += 1
+                                    if count >= max_records:
+                                        return
                     else:
                         for chunk in pd.read_csv(file_path, chunksize=2000):
                             chunk.columns = chunk.columns.str.strip()
                             for _, row in chunk.iterrows():
-                                yield map_unsw_to_ocsf(row.to_dict())
-                                count += 1
-                                if count >= max_records:
-                                    return
+                                event = map_unsw_to_ocsf(row.to_dict())
+                                if (start_time_ms is None or event["time"] >= start_time_ms) and \
+                                   (end_time_ms is None or event["time"] <= end_time_ms):
+                                    yield event
+                                    count += 1
+                                    if count >= max_records:
+                                        return
                 except Exception as e:
                     print(f"Error loading UNSW file {file_path}: {e}")
                     
@@ -300,9 +308,12 @@ class OCSFDataIngestor:
                     for chunk in pd.read_csv(file_path, chunksize=2000):
                         chunk.columns = chunk.columns.str.strip()
                         for _, row in chunk.iterrows():
-                            yield map_cse_to_ocsf(row.to_dict(), count)
-                            count += 1
-                            if count >= max_records:
-                                return
+                            event = map_cse_to_ocsf(row.to_dict(), count)
+                            if (start_time_ms is None or event["time"] >= start_time_ms) and \
+                               (end_time_ms is None or event["time"] <= end_time_ms):
+                                yield event
+                                count += 1
+                                if count >= max_records:
+                                    return
                 except Exception as e:
                     print(f"Error loading CSE file {file_path}: {e}")

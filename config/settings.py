@@ -43,6 +43,14 @@ class Settings(BaseSettings):
         "postgresql+asyncpg://postgres:postgres@db:5432/threat_detection"
     )
 
+    # Production Pipeline and Reliability settings
+    MODEL_VERSION: str = os.getenv("MODEL_VERSION", "1.0.0")
+    DB_BATCH_SIZE: int = int(os.getenv("DB_BATCH_SIZE", "100"))
+    DB_BATCH_INTERVAL: float = float(os.getenv("DB_BATCH_INTERVAL", "5.0"))
+    DB_MAX_RETRIES: int = int(os.getenv("DB_MAX_RETRIES", "5"))
+    DB_RETRY_BACKOFF: float = float(os.getenv("DB_RETRY_BACKOFF", "2.0"))
+    LOG_FORMAT: str = os.getenv("LOG_FORMAT", "json")
+
     class Config:
         env_file = ".env"
 

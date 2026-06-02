@@ -13,9 +13,6 @@ task2/
 ├── config/
 │   ├── __init__.py
 │   └── settings.py              # Configuration thresholds & DB URLs
-├── deploy/
-│   ├── Dockerfile               # Multi-stage production build
-│   └── docker-compose.yml       # API & PostgreSQL container initialization
 ├── src/
 │   ├── __init__.py
 │   ├── api/
@@ -77,12 +74,12 @@ python -m src.models.train
 ```
 This maps raw columns to OCSF format, extracts features, fits the RandomForest model & SHAP explainer, trains the LSTM sequence net, and exports serialized weights to `./data/models/`.
 
-### 3. Deploy via Docker Compose
-Run the entire production environment (FastAPI API application + PostgreSQL database container):
+### 3. Start the FastAPI API Server Locally
+Start the FastAPI server using Uvicorn:
 ```bash
-docker-compose -f deploy/docker-compose.yml up --build -d
+python -m uvicorn src.api.main:app --reload --host 127.0.0.1 --port 8000
 ```
-The database table schemas will be initialized automatically on startup.
+This runs the API locally on port 8000.
 
 ---
 

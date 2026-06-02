@@ -1,8 +1,7 @@
 """
 LEVEL 4 VERIFICATION — Database Write Verification
 Checks PostgreSQL for alert rows, SHAP storage, and attack type distribution.
-Run AFTER docker-compose is up:
-    docker-compose -f deploy/docker-compose.yml up -d
+Run AFTER the API has processed streaming logs:
     python -X utf8 verify/level4_db_verify.py
 """
 import sys, os, json, asyncio
@@ -63,7 +62,7 @@ async def run_checks():
         print("  ✅ Connected to PostgreSQL\n")
     except Exception as e:
         print(f"  ❌ Cannot connect to database at {db_url}: {e}")
-        print("  Make sure docker-compose is running: docker-compose -f deploy/docker-compose.yml up -d")
+        print("  Make sure your local PostgreSQL database service is running.")
         return
 
     # ── 4A: Recent alerts ────────────────────────────────────
