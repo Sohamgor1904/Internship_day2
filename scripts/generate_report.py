@@ -297,14 +297,17 @@ def create_document():
                 set_cell_background(row_cells[col_idx], "F7F9FA")
 
     # Save report with PermissionError safety fallback
-    out_path = "C:\\Users\\Soham Gor\\Desktop\\internship\\Tasks\\task2\\OCSF_Hybrid_Threat_Detection_Report.docx"
+    # Resolve parent project root dynamically relative to scripts/ folder
+    import os
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    out_path = os.path.join(project_root, "doc", "OCSF_Hybrid_Threat_Detection_Report.docx")
     try:
         doc.save(out_path)
         print(f"[SUCCESS] Beautiful Word Document generated successfully at {out_path}!")
     except PermissionError:
         import time
         suffix = int(time.time())
-        alt_path = f"C:\\Users\\Soham Gor\\Desktop\\internship\\Tasks\\task2\\OCSF_Hybrid_Threat_Detection_Report_{suffix}.docx"
+        alt_path = os.path.join(project_root, "doc", f"OCSF_Hybrid_Threat_Detection_Report_{suffix}.docx")
         doc.save(alt_path)
         print(f"[SUCCESS] Primary file was locked. Saved copy at {alt_path}!")
 

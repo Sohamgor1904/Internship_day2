@@ -2,9 +2,10 @@ import pickle
 import time
 import json
 import logging
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Query
 from fastapi.responses import PlainTextResponse
 from contextlib import asynccontextmanager
+from typing import Optional
 
 from config.settings import settings
 from src.api.schemas import OCSFNetworkTrafficSchema
@@ -116,6 +117,44 @@ async def lifespan(app: FastAPI):
     l2_classifier = ContextualClassifier(feature_names=feature_names)
     l3_lstm = Layer3LSTMTracker()
     
+    # Initialize Redis Client and Connection Pool
+    if settings.USE_REDIS:
+        try:
+            import redis.asyncio as aioredis
+            app.state.redis_pool = aioredis.ConnectionPool.from_url(
+                settings.REDIS_URL,
+                max_connections=50,
+                decode_responses=True,
+                socket_timeout=settings.REDIS_TIMEOUT
+            )
+            app.state.redis_client = aioredis.Redis(connection_pool=app.state.redis_pool)
+            
+            # Pass Redis Client to feature pipeline, LSTM model tracker, and DB helper
+            feature_pipeline.redis_client = app.state.redis_client
+            l3_lstm.redis_client = app.state.redis_client
+            db.redis_client = app.state.redis_client
+            logger.info("Successfully established connection to Redis pool.")
+            # Trigger startup DLQ requeue task
+            async def run_startup_dlq_requeue():
+                logger.info("[DLQ] Running startup DLQ requeue processing...")
+                try:
+                    res = await db.requeue_from_dlq()
+                    logger.info(f"[DLQ] Startup DLQ requeue finished. Processed: {res['processed']}, Requeued: {res['requeued']}, Discarded Max Retries: {res['discarded_max_retries']}, Discarded Validation Failed: {res['discarded_validation_failed']}")
+                except Exception as e:
+                    logger.error(f"[DLQ] Error during startup DLQ requeue task: {e}")
+            import asyncio
+            asyncio.create_task(run_startup_dlq_requeue())
+        except Exception as e:
+            logger.critical(f"Failed to initialize Redis pool: {e}. Running with in-memory fallbacks.")
+            app.state.redis_client = None
+            app.state.redis_pool = None
+            feature_pipeline.redis_client = None
+            l3_lstm.redis_client = None
+            db.redis_client = None
+    else:
+        app.state.redis_client = None
+        app.state.redis_pool = None
+        
     # Load StandardScaler
     try:
         with open(settings.SCALER_PATH, "rb") as f:
@@ -136,6 +175,12 @@ async def lifespan(app: FastAPI):
         pass
 
     yield
+    
+    # Clean up Redis pool
+    if hasattr(app.state, "redis_client") and app.state.redis_client:
+        await app.state.redis_client.close()
+    if hasattr(app.state, "redis_pool") and app.state.redis_pool:
+        await app.state.redis_pool.disconnect()
     
     # Clean up database resources
     logger.info("Shutting down API application, cleaning up pool.")
@@ -166,6 +211,20 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
     stats["total_processed"] += 1
     event_dict = record.model_dump()
     
+    # Backpressure check
+    if settings.USE_REDIS and hasattr(app.state, "redis_client") and app.state.redis_client:
+        try:
+            q_len = await app.state.redis_client.llen("threat_alerts:queue")
+            if q_len > settings.REDIS_QUEUE_MAX_SIZE:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Ingestion rate exceeds processing limits. Queue is full."
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error checking queue backpressure: {e}")
+            
     # Extract details for Layer 1 Triage
     time_ms = event_dict.get("time", 0)
     src_ip = event_dict.get("src_endpoint", {}).get("ip", "127.0.0.1")
@@ -183,7 +242,10 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
     protocol_name = conn.get("protocol_name", "tcp")
     
     # Update state and extract numeric feature vector for the stream
-    feature_vector = feature_pipeline.extract_features(event_dict, update_state=True)
+    if settings.USE_REDIS and hasattr(app.state, "redis_client") and app.state.redis_client:
+        feature_vector = await feature_pipeline.extract_features_async(event_dict, update_state=True)
+    else:
+        feature_vector = feature_pipeline.extract_features(event_dict, update_state=True)
     delta_t = float(feature_vector[1])  # Delta time position
     
     # ----------------------------------------------------
@@ -290,7 +352,10 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
     # LAYER 3: Chronological Sequential LSTM
     # ----------------------------------------------------
     lstm_start = time.perf_counter()
-    l3_probability = l3_lstm.evaluate_ip_sequence(src_ip, scaled_vector)
+    if settings.USE_REDIS and hasattr(app.state, "redis_client") and app.state.redis_client:
+        l3_probability = await l3_lstm.evaluate_ip_sequence_async(src_ip, scaled_vector)
+    else:
+        l3_probability = l3_lstm.evaluate_ip_sequence(src_ip, scaled_vector)
     lstm_duration = time.perf_counter() - lstm_start
     metrics_data["inference_latency_sum"]["lstm"] += lstm_duration
     metrics_data["inference_latency_count"]["lstm"] += 1
@@ -374,6 +439,20 @@ async def ingest_log(record: OCSFNetworkTrafficSchema):
     global stats
     stats["total_processed"] += 1
     event_dict = record.model_dump()
+
+    # Backpressure check
+    if settings.USE_REDIS and hasattr(app.state, "redis_client") and app.state.redis_client:
+        try:
+            q_len = await app.state.redis_client.llen("threat_alerts:queue")
+            if q_len > settings.REDIS_QUEUE_MAX_SIZE:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Ingestion rate exceeds processing limits. Queue is full."
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error checking queue backpressure: {e}")
     
     # Extract details for database logging
     time_ms = event_dict.get("time", 0)
@@ -464,7 +543,13 @@ async def prometheus_metrics():
         
     lines.append("# HELP threat_detector_database_batch_queue_size Buffered DB alerts queue size.")
     lines.append("# TYPE threat_detector_database_batch_queue_size gauge")
-    qsize = db.queue.qsize() if db.queue else 0
+    if settings.USE_REDIS and hasattr(app.state, "redis_client") and app.state.redis_client:
+        try:
+            qsize = await app.state.redis_client.llen("threat_alerts:queue")
+        except Exception:
+            qsize = db.queue.qsize() if db.queue else 0
+    else:
+        qsize = db.queue.qsize() if db.queue else 0
     lines.append(f"threat_detector_database_batch_queue_size {qsize}")
     
     lines.append("# HELP threat_detector_database_healthy Operational database connection check.")
@@ -473,4 +558,5 @@ async def prometheus_metrics():
     lines.append(f"threat_detector_database_healthy {1 if db_healthy else 0}")
     
     return PlainTextResponse("\n".join(lines) + "\n")
+
 

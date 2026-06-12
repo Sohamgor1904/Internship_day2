@@ -43,6 +43,15 @@ class Settings(BaseSettings):
         "postgresql+asyncpg://postgres:postgres@db:5432/threat_detection"
     )
 
+    # Redis Configuration
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    REDIS_TIMEOUT: float = float(os.getenv("REDIS_TIMEOUT", "2.0"))
+    USE_REDIS: bool = os.getenv("USE_REDIS", "True").lower() == "true"
+    REDIS_QUEUE_MAX_SIZE: int = int(os.getenv("REDIS_QUEUE_MAX_SIZE", "50000"))
+    REDIS_MAX_RETRIES: int = int(os.getenv("REDIS_MAX_RETRIES", "3"))
+    MAX_DLQ_RETRIES: int = int(os.getenv("MAX_DLQ_RETRIES", "3"))
+    DLQ_REQUEUE_BATCH_SIZE: int = int(os.getenv("DLQ_REQUEUE_BATCH_SIZE", "10"))
+
     # Production Pipeline and Reliability settings
     MODEL_VERSION: str = os.getenv("MODEL_VERSION", "1.0.0")
     DB_BATCH_SIZE: int = int(os.getenv("DB_BATCH_SIZE", "100"))

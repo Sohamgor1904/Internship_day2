@@ -59,8 +59,12 @@ class NumberedCanvas(canvas.Canvas):
         self.restoreState()
 
 
-def compile_project_guide(output_pdf_path="OCSF Hybrid Threat Detection Pipeline project guide.pdf"):
+def compile_project_guide(output_pdf_path=None):
     """Compiles the Zero to Expert Complete Project Guide PDF."""
+    if output_pdf_path is None:
+        # Resolve project root dynamically relative to scripts/ folder
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        output_pdf_path = os.path.join(project_root, "doc", "OCSF Hybrid Threat Detection Pipeline project guide.pdf")
     
     # 0.75-inch left/right margins (54pt), 1.0-inch top/bottom margins (72pt)
     doc = SimpleDocTemplate(

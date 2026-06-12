@@ -217,6 +217,7 @@ class Layer3LSTMTracker:
         self.model_path = model_path
         self.device = torch.device("cpu")  # Laptop CPU fallback optimization
         self.model = None
+        self.redis_client = None
         # IP sequence queues tracking sliding window of past feature vectors
         self.ip_sequences: Dict[str, deque] = {}
         self.load_model()
@@ -268,5 +269,53 @@ class Layer3LSTMTracker:
         return float(threat_prob)
 
     def reset(self):
+        """Resets sequence tracking states."""
+        self.ip_sequences.clear()
+
+    # Lua script for LSTM sequence atomicity
+    LUA_LSTM_SCRIPT = """
+    redis.call('LPUSH', KEYS[1], ARGV[1])
+    redis.call('LTRIM', KEYS[1], 0, ARGV[2] - 1)
+    return redis.call('LRANGE', KEYS[1], 0, ARGV[2] - 1)
+    """
+
+    async def evaluate_ip_sequence_async(self, ip_address: str, feature_vector: np.ndarray) -> float:
+        """Appends latest feature vector asynchronously to Redis sequence list and runs LSTM inference."""
+        import json
+        if self.model is None:
+            return 0.0
+            
+        if not self.redis_client:
+            return self.evaluate_ip_sequence(ip_address, feature_vector)
+            
+        lstm_key = f"threat_detection:lstm:{ip_address}"
+        try:
+            vector_json = json.dumps(feature_vector.tolist())
+            res = await self.redis_client.eval(
+                self.LUA_LSTM_SCRIPT,
+                1,
+                lstm_key,
+                vector_json,
+                str(settings.L3_WINDOW_SIZE)
+            )
+            features_list = [np.array(json.loads(x), dtype=np.float32) for x in reversed(res)]
+        except Exception as e:
+            print(f"Redis LSTM state script failed: {e}. Falling back to in-memory state.")
+            return self.evaluate_ip_sequence(ip_address, feature_vector)
+            
+        seq_len = len(features_list)
+        if seq_len < settings.L3_WINDOW_SIZE:
+            padding_count = settings.L3_WINDOW_SIZE - seq_len
+            padding = [np.zeros_like(feature_vector) for _ in range(padding_count)]
+            features_list = padding + features_list
+            
+        seq_tensor = torch.tensor(np.array([features_list]), dtype=torch.float32).to(self.device)
+        
+        with torch.no_grad():
+            threat_prob = self.model(seq_tensor).item()
+            
+        return float(threat_prob)
+
+    async def reset_async(self):
         """Resets sequence tracking states."""
         self.ip_sequences.clear()
