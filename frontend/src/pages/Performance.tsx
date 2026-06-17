@@ -83,6 +83,27 @@ const SIMULATED_LOGS: Omit<LogEntry, "id" | "time">[] = [
   }
 ];
 
+const MATRIX_STATS = {
+  rf: {
+    tn: "1,892",
+    fp: "10",
+    fn: "1",
+    tp: "3,497",
+    precision: "99.71%",
+    recall: "99.97%",
+    f1: "99.84%"
+  },
+  lstm: {
+    tn: "1,854",
+    fp: "48",
+    fn: "80",
+    tp: "3,418",
+    precision: "98.61%",
+    recall: "97.71%",
+    f1: "98.16%"
+  }
+};
+
 export function Performance() {
   const { sidebarCollapsed } = useAppStore();
   const [activeTab, setActiveTab] = useState<"rf" | "lstm">("rf");
@@ -338,8 +359,8 @@ export function Performance() {
           </div>
 
           {/* Confusion Matrix Tabs Panel */}
-          <div className="lg:col-span-2 bg-slate-900/30 border border-slate-800 rounded-xl p-5 flex flex-col">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-3">
+          <div className="lg:col-span-2 bg-slate-900/30 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-3 border-b border-slate-800/60">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Confusion Matrices</h3>
               
               {/* Tab Selector Buttons */}
@@ -360,25 +381,25 @@ export function Performance() {
             </div>
 
             {/* Matrix Visuals & Stats */}
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 items-center mt-2">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch mt-4">
               
               {/* Left Column: Image wrapper */}
-              <div className="bg-black/60 p-4 rounded-xl border border-slate-950 text-center flex flex-col items-center justify-center w-full">
+              <div className="bg-black/60 p-4 rounded-xl border border-slate-950 text-center flex flex-col items-center justify-center min-h-[300px] w-full">
                 {activeTab === "rf" ? (
-                  <div className="space-y-2">
+                  <div className="space-y-2 w-full">
                     <img 
                       src="/rf_confusion_matrix.png" 
                       alt="Random Forest Confusion Matrix" 
-                      className="max-h-56 mx-auto rounded border border-slate-800"
+                      className="max-h-64 mx-auto rounded border border-slate-800 object-contain"
                     />
                     <span className="text-xxs text-slate-500 font-mono block italic">Figure A: Contextual RF Confusion Matrix</span>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-2 w-full">
                     <img 
                       src="/lstm_confusion_matrix.png" 
                       alt="PyTorch LSTM Confusion Matrix" 
-                      className="max-h-56 mx-auto rounded border border-slate-800"
+                      className="max-h-64 mx-auto rounded border border-slate-800 object-contain"
                     />
                     <span className="text-xxs text-slate-500 font-mono block italic">Figure B: PyTorch LSTM Confusion Matrix</span>
                   </div>
@@ -386,37 +407,69 @@ export function Performance() {
               </div>
 
               {/* Right Column: Quantitative Highlights */}
-              <div className="text-xs text-slate-400 space-y-4">
-                <div className="flex items-center gap-1.5 text-slate-200 font-bold uppercase tracking-wider text-xxs">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Corporate Threat Interpretation</span>
+              <div className="flex flex-col justify-between space-y-4">
+                <div>
+                  <div className="flex items-center gap-1.5 text-slate-200 font-bold uppercase tracking-wider text-xxs mb-3">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Model Stats & Corporate Interpretation</span>
+                  </div>
+
+                  {/* Model Metrics Pills */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <div className="bg-indigo-950/40 border border-indigo-800/60 px-2.5 py-1 rounded-full text-xxs font-semibold text-indigo-300">
+                      Precision: {MATRIX_STATS[activeTab].precision}
+                    </div>
+                    <div className="bg-emerald-950/40 border border-emerald-800/60 px-2.5 py-1 rounded-full text-xxs font-semibold text-emerald-300">
+                      Recall: {MATRIX_STATS[activeTab].recall}
+                    </div>
+                    <div className="bg-purple-950/40 border border-purple-800/60 px-2.5 py-1 rounded-full text-xxs font-semibold text-purple-300">
+                      F1-Score: {MATRIX_STATS[activeTab].f1}
+                    </div>
+                  </div>
+
+                  {/* 2x2 Matrix Grid */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    {/* True Negatives */}
+                    <div className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/80">
+                      <div className="text-[10px] text-slate-500 uppercase font-semibold">True Negatives (TN)</div>
+                      <div className="text-base font-black text-emerald-400 font-mono mt-0.5">{MATRIX_STATS[activeTab].tn}</div>
+                      <div className="text-[9px] text-slate-500 leading-tight mt-0.5">Benign traffic passed</div>
+                    </div>
+                    {/* False Positives */}
+                    <div className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/80">
+                      <div className="text-[10px] text-slate-500 uppercase font-semibold">False Positives (FP)</div>
+                      <div className="text-base font-black text-amber-500 font-mono mt-0.5">{MATRIX_STATS[activeTab].fp}</div>
+                      <div className="text-[9px] text-slate-500 leading-tight mt-0.5">Safe traffic flagged</div>
+                    </div>
+                    {/* False Negatives */}
+                    <div className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/80">
+                      <div className="text-[10px] text-slate-500 uppercase font-semibold">False Negatives (FN)</div>
+                      <div className="text-base font-black text-rose-500 font-mono mt-0.5">{MATRIX_STATS[activeTab].fn}</div>
+                      <div className="text-[9px] text-slate-500 leading-tight mt-0.5">Threats missed</div>
+                    </div>
+                    {/* True Positives */}
+                    <div className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/80">
+                      <div className="text-[10px] text-slate-500 uppercase font-semibold">True Positives (TP)</div>
+                      <div className="text-base font-black text-emerald-400 font-mono mt-0.5">{MATRIX_STATS[activeTab].tp}</div>
+                      <div className="text-[9px] text-slate-500 leading-tight mt-0.5">Threats identified</div>
+                    </div>
+                  </div>
                 </div>
 
                 {activeTab === "rf" ? (
-                  <div className="space-y-2 text-xxs leading-relaxed">
+                  <div className="text-xxs leading-relaxed text-slate-400 bg-slate-950/30 p-3 rounded-lg border border-slate-900">
                     <p>
-                      <strong className="text-indigo-400">True Positives (TP): 3,497.</strong> Malicious attack flows that were correctly flagged by the model. This high rate keeps anomalous threat infiltration to a minimum.
-                    </p>
-                    <p>
-                      <strong className="text-indigo-400">True Negatives (TN): 1,892.</strong> Regular benign corporate communications correctly classified as safe, bypassing alerts database logging.
-                    </p>
-                    <p>
-                      <strong className="text-rose-400">False Positives (FP): 10 (0.5% rate).</strong> Benign flows incorrectly flagged. Keeping this low is critical to prevent analyst alert fatigue.
-                    </p>
-                    <p>
-                      <strong className="text-amber-500">False Negatives (FN): 1 (0.03% risk).</strong> Attacks passed as benign. Only 1 record was missed, ensuring robust threat capture (99.97% recall).
+                      <strong>Random Forest Performance:</strong> Achieved near-perfect classification. 
+                      A extremely low False Positive rate (<strong className="text-rose-400">0.5%</strong>) prevents SOC alert fatigue, 
+                      while a <strong className="text-indigo-400">99.97%</strong> recall restricts undetected malicious penetration to near-zero.
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-2 text-xxs leading-relaxed">
+                  <div className="text-xxs leading-relaxed text-slate-400 bg-slate-950/30 p-3 rounded-lg border border-slate-900">
                     <p>
-                      The PyTorch LSTM matrix maps chronological sequence patterns. By monitoring sequence-order transitions statefully, it verifies anomalies escalated by Layer 2.
-                    </p>
-                    <p>
-                      This ensures that stealthy, slow beaconing signatures (APT lateral movements) that look like safe individual events are correctly flagged when evaluated as a sequence.
-                    </p>
-                    <p>
-                      Validation results demonstrate a sequence accuracy of <strong className="text-indigo-400">97.63%</strong> under balanced testing environments.
+                      <strong>LSTM Sequence Performance:</strong> Maps chronological event sequences statefully. 
+                      This prevents slow beaconing activities (APT lateral movements) from going undetected 
+                      even if each individual flow seems benign when evaluated in isolation.
                     </p>
                   </div>
                 )}
