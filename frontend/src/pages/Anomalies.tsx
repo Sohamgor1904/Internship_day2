@@ -143,7 +143,7 @@ export function Anomalies() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex">
       {/* Sidebar Nav */}
       <Sidebar />
 
@@ -151,15 +151,15 @@ export function Anomalies() {
       <main className={`flex-1 transition-all duration-300 p-8 ${sidebarCollapsed ? "ml-16" : "ml-64"}`}>
         
         {/* Top Header Bar */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200 animate-fade-in-up">
           <div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">Anomaly Explorer</h1>
-            <p className="text-xs text-slate-400 mt-1">Deep-dive analysis of Z-Scores, Shannon Entropy, and EWMA flow volumes.</p>
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Anomaly Explorer</h1>
+            <p className="text-xs text-slate-500 mt-1">Deep-dive analysis of Z-Scores, Shannon Entropy, and EWMA flow volumes.</p>
           </div>
 
           {/* Zustand IP Selector */}
-          <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-lg p-2.5">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+          <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-2.5 shadow-sm">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
               <Sliders className="w-3.5 h-3.5" />
               Source IP Filter:
             </span>
@@ -167,10 +167,10 @@ export function Anomalies() {
               value={activeIPFilter || "all"} 
               onValueChange={(val) => setActiveIPFilter(val === "all" ? null : val)}
             >
-              <SelectTrigger className="w-48 bg-slate-950 border-slate-800 text-slate-200 focus:ring-indigo-600 focus:ring-offset-0 focus:ring-1">
+              <SelectTrigger className="w-48 bg-slate-50 border-slate-200 text-slate-700 focus:ring-indigo-600 focus:ring-offset-0 focus:ring-1">
                 <SelectValue placeholder="All IPs" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-950 border-slate-800 text-slate-200">
+              <SelectContent className="bg-white border-slate-200 text-slate-800">
                 <SelectItem value="all">All IPs</SelectItem>
                 {ipList.map(ip => (
                   <SelectItem key={ip} value={ip}>{ip}</SelectItem>
@@ -184,30 +184,30 @@ export function Anomalies() {
         <div className="grid grid-cols-1 gap-8 mt-8">
           
           {/* Chart 1: ScatterChart - Anomaly Score per IP over time */}
-          <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-5">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-1.5">
-              <ActivitySquare className="w-4 h-4 text-indigo-400" />
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover-lift animate-fade-in-up animation-delay-100">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+              <ActivitySquare className="w-4 h-4 text-indigo-600" />
               Layer 1 Volumetric Anomaly Scores (Z-Score Timeline)
             </h3>
             <div className="h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <ScatterChart margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.3} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
                   <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} allowDuplicatedCategory={false} />
                   <YAxis dataKey="y" domain={[0, 6]} stroke="#64748b" fontSize={10} tickLine={false} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}
-                    labelClassName="text-slate-400 text-xs font-semibold"
+                    contentStyle={{ backgroundColor: "#ffffff", borderColor: "#cbd5e1", borderRadius: "8px", boxShadow: "0 4px 12px rgba(15,23,42,0.05)" }}
+                    labelClassName="text-slate-500 text-xs font-semibold"
                     itemStyle={{ fontSize: "12px" }}
-                    cursor={{ strokeDasharray: "3 3", stroke: "#475569" }}
+                    cursor={{ strokeDasharray: "3 3", stroke: "#cbd5e1" }}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload as MetricTimeseries;
                         return (
-                          <div className="bg-slate-900 border border-slate-800 p-3 rounded-lg text-xs space-y-1">
-                            <p className="font-bold text-white">{data.time}</p>
-                            <p className="text-slate-400">Host IP: <span className="font-mono text-indigo-300">{data.ip}</span></p>
-                            <p className="text-slate-400">Anomaly Score: <span className={`font-bold ${data.anomalyScore >= 2.5 ? "text-rose-400" : "text-slate-200"}`}>{data.anomalyScore}</span></p>
+                          <div className="bg-white border border-slate-250 p-3 rounded-lg text-xs space-y-1 shadow-md">
+                            <p className="font-bold text-slate-900">{data.time}</p>
+                            <p className="text-slate-500">Host IP: <span className="font-mono text-indigo-600 font-semibold">{data.ip}</span></p>
+                            <p className="text-slate-500">Anomaly Score: <span className={`font-bold ${data.anomalyScore >= 2.5 ? "text-rose-600" : "text-slate-800"}`}>{data.anomalyScore}</span></p>
                           </div>
                         );
                       }
@@ -236,18 +236,18 @@ export function Anomalies() {
                 </ScatterChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex items-center gap-4 text-xxs text-slate-500 mt-2 px-2">
+            <div className="flex items-center gap-4 text-xxs text-slate-400 mt-2 px-2">
               <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500"/> Critical Anomalies (&ge; 2.5)</div>
-              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-500"/> Normal Baseline Activity</div>
+              <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-400"/> Normal Baseline Activity</div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             {/* Chart 2: LineChart - Shannon Entropy */}
-            <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-5">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                <Hash className="w-4 h-4 text-indigo-400" />
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover-lift animate-fade-in-up animation-delay-200">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <Hash className="w-4 h-4 text-indigo-600" />
                 Shannon Entropy of Destination Ports
               </h3>
               <div className="h-64 w-full">
@@ -256,13 +256,13 @@ export function Anomalies() {
                     data={lineData}
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.3} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
                     <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} />
                     <YAxis stroke="#64748b" fontSize={10} tickLine={false} domain={[0, 4]} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}
-                      labelClassName="text-slate-400 text-xs font-semibold"
-                      itemStyle={{ color: "#f8fafc", fontSize: "12px" }}
+                      contentStyle={{ backgroundColor: "#ffffff", borderColor: "#cbd5e1", borderRadius: "8px", boxShadow: "0 4px 12px rgba(15,23,42,0.05)" }}
+                      labelClassName="text-slate-500 text-xs font-semibold"
+                      itemStyle={{ color: "#0f172a", fontSize: "12px" }}
                     />
                     <Line 
                       type="monotone" 
@@ -275,15 +275,15 @@ export function Anomalies() {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-xxs text-slate-500 mt-2 px-1">
+              <p className="text-xxs text-slate-400 mt-2 px-1">
                 Lower values indicate traffic targeting a concentrated set of ports (e.g. port scan or DDoS).
               </p>
             </div>
 
             {/* Chart 3: AreaChart - EWMA Volume */}
-            <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-5">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                <Activity className="w-4 h-4 text-indigo-400" />
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover-lift animate-fade-in-up animation-delay-300">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <Activity className="w-4 h-4 text-indigo-600" />
                 EWMA Flow Volume byte trend per host
               </h3>
               <div className="h-64 w-full">
@@ -298,7 +298,7 @@ export function Anomalies() {
                         <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.3} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
                     <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} />
                     <YAxis 
                       stroke="#64748b" 
@@ -307,9 +307,9 @@ export function Anomalies() {
                       tickFormatter={formatBytes}
                     />
                     <Tooltip
-                      contentStyle={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}
-                      labelClassName="text-slate-400 text-xs font-semibold"
-                      itemStyle={{ color: "#f8fafc", fontSize: "12px" }}
+                      contentStyle={{ backgroundColor: "#ffffff", borderColor: "#cbd5e1", borderRadius: "8px", boxShadow: "0 4px 12px rgba(15,23,42,0.05)" }}
+                      labelClassName="text-slate-500 text-xs font-semibold"
+                      itemStyle={{ color: "#0f172a", fontSize: "12px" }}
                       formatter={(val: any) => [formatBytes(val), "Flow Volume"]}
                     />
                     <Area 
@@ -323,7 +323,7 @@ export function Anomalies() {
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-xxs text-slate-500 mt-2 px-1">
+              <p className="text-xxs text-slate-400 mt-2 px-1">
                 Exponentially Weighted Moving Average (EWMA) tracking overall byte flow metrics.
               </p>
             </div>

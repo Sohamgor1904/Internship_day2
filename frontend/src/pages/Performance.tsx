@@ -145,7 +145,7 @@ export function Performance() {
   }, [isTerminalPaused]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex">
       {/* Sidebar Nav */}
       <Sidebar />
 
@@ -153,10 +153,10 @@ export function Performance() {
       <main className={`flex-1 transition-all duration-300 p-8 ${sidebarCollapsed ? "ml-16" : "ml-64"}`}>
         
         {/* Top Header Bar */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
           <div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">Model Evaluation & Simulator Logs</h1>
-            <p className="text-xs text-slate-400 mt-1">
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Model Evaluation & Simulator Logs</h1>
+            <p className="text-xs text-slate-500 mt-1">
               Offline performance benchmarks, confusion matrices, and live command prompt log telemetry.
             </p>
           </div>
@@ -174,47 +174,47 @@ export function Performance() {
 
         {/* 4 Summary Cards Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
-          <Card className="bg-slate-900/40 border-slate-800">
+          <Card className="bg-white border-slate-200 shadow-sm hover-lift">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-semibold text-slate-400 uppercase tracking-wider">L2 RF Accuracy</CardTitle>
-              <Cpu className="w-5 h-5 text-indigo-400" />
+              <CardTitle className="text-xs font-semibold text-slate-500 uppercase tracking-wider">L2 RF Accuracy</CardTitle>
+              <Cpu className="w-5 h-5 text-indigo-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-black text-white">99.80%</div>
-              <p className="text-xxs text-slate-500 mt-1">Supervised Random Forest classification rate.</p>
+              <div className="text-2xl font-black text-slate-800">99.80%</div>
+              <p className="text-xxs text-slate-400 mt-1">Supervised Random Forest classification rate.</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900/40 border-slate-800">
+          <Card className="bg-white border-slate-200 shadow-sm hover-lift">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-semibold text-slate-400 uppercase tracking-wider">L2 RF Recall</CardTitle>
-              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              <CardTitle className="text-xs font-semibold text-slate-500 uppercase tracking-wider">L2 RF Recall</CardTitle>
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-black text-emerald-400">100.0%</div>
-              <p className="text-xxs text-slate-500 mt-1">Percentage of standalone attacks correctly caught.</p>
+              <div className="text-2xl font-black text-emerald-600">100.0%</div>
+              <p className="text-xxs text-slate-400 mt-1">Percentage of standalone attacks correctly caught.</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900/40 border-slate-800">
+          <Card className="bg-white border-slate-200 shadow-sm hover-lift">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-semibold text-slate-400 uppercase tracking-wider">L3 LSTM Accuracy</CardTitle>
-              <Activity className="w-5 h-5 text-rose-500" />
+              <CardTitle className="text-xs font-semibold text-slate-500 uppercase tracking-wider">L3 LSTM Accuracy</CardTitle>
+              <Activity className="w-5 h-5 text-rose-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-black text-white">97.63%</div>
-              <p className="text-xxs text-slate-500 mt-1">Chronological sequence recognition accuracy.</p>
+              <div className="text-2xl font-black text-slate-800">97.63%</div>
+              <p className="text-xxs text-slate-400 mt-1">Chronological sequence recognition accuracy.</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900/40 border-slate-800">
+          <Card className="bg-white border-slate-200 shadow-sm hover-lift">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Inference Latency</CardTitle>
-              <FileText className="w-5 h-5 text-amber-500" />
+              <CardTitle className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Inference Latency</CardTitle>
+              <FileText className="w-5 h-5 text-amber-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-black text-amber-400">&lt; 5 ms</div>
-              <p className="text-xxs text-slate-500 mt-1">Average pipeline Layer 2 processing duration.</p>
+              <div className="text-2xl font-black text-amber-600">&lt; 5 ms</div>
+              <p className="text-xxs text-slate-400 mt-1">Average pipeline Layer 2 processing duration.</p>
             </CardContent>
           </Card>
         </div>
@@ -223,18 +223,18 @@ export function Performance() {
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Terminal Console Column */}
-          <div className="lg:col-span-2 flex flex-col bg-slate-900/30 border border-slate-800 rounded-xl p-5 overflow-hidden">
+          <div className="lg:col-span-2 flex flex-col bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover-lift overflow-hidden">
             <div className="flex items-center justify-between pb-4">
               <div className="flex items-center gap-2">
-                <TerminalIcon className="w-4 h-4 text-indigo-400" />
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Live Pipeline Simulator CLI Output</h3>
+                <TerminalIcon className="w-4 h-4 text-indigo-600" />
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Live Pipeline Simulator CLI Output</h3>
               </div>
               <button 
                 onClick={() => setIsTerminalPaused(!isTerminalPaused)}
-                className={`flex items-center gap-1.5 text-xxs font-mono px-2 py-1 rounded transition-colors ${
+                className={`flex items-center gap-1.5 text-xxs font-mono px-2.5 py-1.5 rounded border transition-colors ${
                   isTerminalPaused 
-                    ? "bg-amber-600/20 text-amber-400 hover:bg-amber-600/30" 
-                    : "bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30"
+                    ? "bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200" 
+                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200"
                 }`}
               >
                 <RefreshCw className={`w-3 h-3 ${isTerminalPaused ? "" : "animate-spin"}`} />
@@ -243,13 +243,13 @@ export function Performance() {
             </div>
             
             {/* Console Screen */}
-            <div className="h-80 bg-black text-slate-300 font-mono text-xs p-4 rounded-lg border border-slate-950 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-800 flex flex-col gap-1.5 shadow-inner">
+            <div className="h-80 bg-slate-900 text-slate-350 font-mono text-xs p-4 rounded-lg border border-slate-950 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-800 flex flex-col gap-1.5 shadow-inner">
               {logs.map((log) => {
                 let colorClass = "text-slate-400";
-                if (log.type === "alert") colorClass = "text-rose-500 font-bold";
-                if (log.type === "triage_l1") colorClass = "text-emerald-500";
-                if (log.type === "triage_l2") colorClass = "text-orange-400";
-                if (log.type === "info_l3") colorClass = "text-indigo-400";
+                if (log.type === "alert") colorClass = "text-rose-400 font-bold";
+                if (log.type === "triage_l1") colorClass = "text-emerald-400";
+                if (log.type === "triage_l2") colorClass = "text-amber-400";
+                if (log.type === "info_l3") colorClass = "text-indigo-300";
                 
                 const isSelected = selectedLog?.id === log.id;
 
@@ -257,21 +257,21 @@ export function Performance() {
                   <div 
                     key={log.id} 
                     onClick={() => setSelectedLog(log)}
-                    className={`py-1 px-2 rounded cursor-pointer transition-colors hover:bg-slate-900/50 flex items-start gap-2 ${isSelected ? "bg-slate-900 border-l-2 border-indigo-500 text-white" : ""}`}
+                    className={`py-1 px-2 rounded cursor-pointer transition-colors hover:bg-slate-800/40 flex items-start gap-2 ${isSelected ? "bg-slate-850 border-l-2 border-indigo-500 text-white" : ""}`}
                   >
-                    <span className="text-slate-600 select-none text-xxs mt-0.5">[{log.time}]</span>
+                    <span className="text-slate-500 select-none text-xxs mt-0.5">[{log.time}]</span>
                     <span className={`break-all ${colorClass}`}>{log.content}</span>
                   </div>
                 );
               })}
             </div>
-            <p className="text-xxs text-slate-500 mt-2 italic">Click on any log line in the console to inspect its security interpretation panel on the right.</p>
+            <p className="text-xxs text-slate-400 mt-2 italic">Click on any log line in the console to inspect its security interpretation panel on the right.</p>
           </div>
 
           {/* Explanation Tooltip Panel Column */}
-          <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-5 flex flex-col">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider pb-4 border-b border-slate-800 flex items-center gap-1.5">
-              <Info className="w-4 h-4 text-indigo-400" /> Log Inspector
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover-lift flex flex-col">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider pb-4 border-b border-slate-100 flex items-center gap-1.5">
+              <Info className="w-4 h-4 text-indigo-600" /> Log Inspector
             </h3>
             
             {selectedLog ? (
@@ -281,24 +281,24 @@ export function Performance() {
                     <span className={`w-2.5 h-2.5 rounded-full ${
                       selectedLog.type === "alert" ? "bg-rose-500 animate-pulse" :
                       selectedLog.type === "triage_l1" ? "bg-emerald-500" :
-                      selectedLog.type === "triage_l2" ? "bg-orange-400" : "bg-indigo-500"
+                      selectedLog.type === "triage_l2" ? "bg-amber-500" : "bg-indigo-550"
                     }`} />
-                    <h4 className="text-sm font-bold text-slate-100">{selectedLog.title}</h4>
+                    <h4 className="text-sm font-bold text-slate-900">{selectedLog.title}</h4>
                   </div>
                   
-                  <div className="bg-black/40 border border-slate-950 p-3 rounded text-xxs font-mono text-slate-400 break-all leading-normal">
+                  <div className="bg-slate-50 border border-slate-250 p-3 rounded text-xxs font-mono text-slate-700 break-all leading-normal">
                     {selectedLog.content}
                   </div>
 
-                  <div className="text-xs text-slate-400 leading-relaxed space-y-2">
-                    <p className="font-semibold text-slate-300">Technical Breakdown:</p>
+                  <div className="text-xs text-slate-600 leading-relaxed space-y-2">
+                    <p className="font-semibold text-slate-800">Technical Breakdown:</p>
                     <p>{selectedLog.explanation}</p>
                   </div>
                 </div>
 
-                <div className="mt-6 border-t border-slate-800 pt-4 text-xxs text-slate-500">
+                <div className="mt-6 border-t border-slate-100 pt-4 text-xxs text-slate-400">
                   <span>Defense Pipeline State: </span>
-                  <span className="text-indigo-400 font-semibold uppercase font-mono">
+                  <span className="text-indigo-600 font-semibold uppercase font-mono">
                     {selectedLog.type === "triage_l1" ? "L1 Stateful Triage" :
                      selectedLog.type === "triage_l2" ? "L2 Contextual ML" :
                      selectedLog.type === "alert" ? "L3 Sequence Alert" : "System Thread"}
@@ -306,7 +306,7 @@ export function Performance() {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-500 p-6">
+              <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-400 p-6">
                 <TerminalIcon className="w-8 h-8 opacity-20 mb-2" />
                 <p className="text-xs">No log selected. Click any command prompt log line to view analysis.</p>
               </div>
@@ -318,32 +318,32 @@ export function Performance() {
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Detailed Interpretation Panel */}
-          <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover-lift flex flex-col justify-between">
             <div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider pb-4">Trained Estimators Config</h3>
-              <div className="space-y-4 text-xs text-slate-400 mt-2">
-                <div className="border-b border-slate-800 pb-3">
-                  <span className="font-semibold text-slate-300 block">Layer 2: Contextual Random Forest</span>
-                  <span className="text-xxs font-mono text-indigo-400">100 Trees, Depth 12, Scikit-Learn</span>
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider pb-4">Trained Estimators Config</h3>
+              <div className="space-y-4 text-xs text-slate-500 mt-2">
+                <div className="border-b border-slate-100 pb-3">
+                  <span className="font-semibold text-slate-800 block">Layer 2: Contextual Random Forest</span>
+                  <span className="text-xxs font-mono text-indigo-650">100 Trees, Depth 12, Scikit-Learn</span>
                   <p className="mt-1 leading-normal text-xxs">Trained on 18,000 balanced OCSF entries constructed from CICIDS2017, UNSW-NB15, and CSE-CIC-IDS2018. Fitted with StandardScaler to normalize volumetric rates.</p>
                 </div>
 
-                <div className="border-b border-slate-800 pb-3">
-                  <span className="font-semibold text-slate-300 block">Layer 3: Sequential PyTorch LSTM</span>
-                  <span className="text-xxs font-mono text-indigo-400">2 Layers, 64 Hidden Units, PyTorch</span>
+                <div className="border-b border-slate-100 pb-3">
+                  <span className="font-semibold text-slate-800 block">Layer 3: Sequential PyTorch LSTM</span>
+                  <span className="text-xxs font-mono text-indigo-650">2 Layers, 64 Hidden Units, PyTorch</span>
                   <p className="mt-1 leading-normal text-xxs">Statefully trained on sliding event sequences to capture chronologically sequence-order dependencies (e.g., beaconing intervals). Achieved best loss of 0.0865 at Epoch 18.</p>
                 </div>
 
                 <div>
-                  <span className="font-semibold text-slate-300 block">System Latency Optimization</span>
-                  <span className="text-xxs font-mono text-emerald-400">90% Bypass Rate</span>
+                  <span className="font-semibold text-slate-800 block">System Latency Optimization</span>
+                  <span className="text-xxs font-mono text-emerald-600 font-bold">90% Bypass Rate</span>
                   <p className="mt-1 leading-normal text-xxs">Simulation metrics demonstrate that 90.0% of standard traffic drops at Layer 0/1 without running heavy ML/DL layers, leading to a 14.5% latency reduction.</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-slate-950/40 p-4 border border-slate-800 rounded-lg text-xxs text-slate-500 mt-6 leading-relaxed">
-              <div className="flex items-center gap-1.5 text-indigo-400 font-bold mb-1">
+            <div className="bg-slate-50 p-4 border border-slate-200 rounded-lg text-xxs text-slate-500 mt-6 leading-relaxed">
+              <div className="flex items-center gap-1.5 text-indigo-600 font-bold mb-1">
                 <Layers className="w-3.5 h-3.5" />
                 <span>Sequence-Order Verification</span>
               </div>
@@ -352,21 +352,21 @@ export function Performance() {
           </div>
 
           {/* Confusion Matrix Tabs Panel */}
-          <div className="lg:col-span-2 bg-slate-900/30 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-3 border-b border-slate-800/60">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Confusion Matrices</h3>
+          <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover-lift flex flex-col justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-3 border-b border-slate-200/60">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Confusion Matrices</h3>
               
               {/* Tab Selector Buttons */}
-              <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-xxs font-mono">
+              <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 text-xxs font-mono">
                 <button
                   onClick={() => setActiveTab("rf")}
-                  className={`px-3 py-1.5 rounded transition-all ${activeTab === "rf" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"}`}
+                  className={`px-3 py-1.5 rounded transition-all ${activeTab === "rf" ? "bg-indigo-600 text-white shadow" : "text-slate-500 hover:text-slate-800"}`}
                 >
                   LAYER 2 RANDOM FOREST
                 </button>
                 <button
                   onClick={() => setActiveTab("lstm")}
-                  className={`px-3 py-1.5 rounded transition-all ${activeTab === "lstm" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"}`}
+                  className={`px-3 py-1.5 rounded transition-all ${activeTab === "lstm" ? "bg-indigo-600 text-white shadow" : "text-slate-500 hover:text-slate-800"}`}
                 >
                   LAYER 3 PYTORCH LSTM
                 </button>
@@ -377,13 +377,13 @@ export function Performance() {
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch mt-4">
               
               {/* Left Column: Image wrapper */}
-              <div className="bg-black/60 p-4 rounded-xl border border-slate-950 text-center flex flex-col items-center justify-center min-h-[300px] w-full">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center flex flex-col items-center justify-center min-h-[300px] w-full">
                 {activeTab === "rf" ? (
                   <div className="space-y-2 w-full">
                     <img 
                       src="/rf_confusion_matrix.png" 
                       alt="Random Forest Confusion Matrix" 
-                      className="max-h-64 mx-auto rounded border border-slate-800 object-contain"
+                      className="max-h-64 mx-auto rounded border border-slate-200 object-contain"
                     />
                     <span className="text-xxs text-slate-500 font-mono block italic">Figure A: Contextual RF Confusion Matrix</span>
                   </div>
@@ -392,7 +392,7 @@ export function Performance() {
                     <img 
                       src="/lstm_confusion_matrix.png" 
                       alt="PyTorch LSTM Confusion Matrix" 
-                      className="max-h-64 mx-auto rounded border border-slate-800 object-contain"
+                      className="max-h-64 mx-auto rounded border border-slate-200 object-contain"
                     />
                     <span className="text-xxs text-slate-500 font-mono block italic">Figure B: PyTorch LSTM Confusion Matrix</span>
                   </div>
@@ -402,20 +402,20 @@ export function Performance() {
               {/* Right Column: Quantitative Highlights */}
               <div className="flex flex-col justify-between space-y-4">
                 <div>
-                  <div className="flex items-center gap-1.5 text-slate-200 font-bold uppercase tracking-wider text-xxs mb-3">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                  <div className="flex items-center gap-1.5 text-slate-800 font-bold uppercase tracking-wider text-xxs mb-3">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
                     <span>Model Stats & Corporate Interpretation</span>
                   </div>
 
                   {/* Model Metrics Pills */}
                   <div className="flex flex-wrap gap-2 mb-4">
-                    <div className="bg-indigo-950/40 border border-indigo-800/60 px-2.5 py-1 rounded-full text-xxs font-semibold text-indigo-300">
+                    <div className="bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full text-xxs font-semibold text-indigo-700">
                       Precision: {MATRIX_STATS[activeTab].precision}
                     </div>
-                    <div className="bg-emerald-950/40 border border-emerald-800/60 px-2.5 py-1 rounded-full text-xxs font-semibold text-emerald-300">
+                    <div className="bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full text-xxs font-semibold text-emerald-700">
                       Recall: {MATRIX_STATS[activeTab].recall}
                     </div>
-                    <div className="bg-purple-950/40 border border-purple-800/60 px-2.5 py-1 rounded-full text-xxs font-semibold text-purple-300">
+                    <div className="bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-full text-xxs font-semibold text-purple-700">
                       F1-Score: {MATRIX_STATS[activeTab].f1}
                     </div>
                   </div>
@@ -423,42 +423,42 @@ export function Performance() {
                   {/* 2x2 Matrix Grid */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     {/* True Negatives */}
-                    <div className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/80">
-                      <div className="text-[10px] text-slate-500 uppercase font-semibold">True Negatives (TN)</div>
-                      <div className="text-base font-black text-emerald-400 font-mono mt-0.5">{MATRIX_STATS[activeTab].tn}</div>
+                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                      <div className="text-[10px] text-slate-450 uppercase font-semibold">True Negatives (TN)</div>
+                      <div className="text-base font-black text-emerald-600 font-mono mt-0.5">{MATRIX_STATS[activeTab].tn}</div>
                       <div className="text-[9px] text-slate-500 leading-tight mt-0.5">Benign traffic passed</div>
                     </div>
                     {/* False Positives */}
-                    <div className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/80">
-                      <div className="text-[10px] text-slate-500 uppercase font-semibold">False Positives (FP)</div>
-                      <div className="text-base font-black text-amber-500 font-mono mt-0.5">{MATRIX_STATS[activeTab].fp}</div>
+                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                      <div className="text-[10px] text-slate-450 uppercase font-semibold">False Positives (FP)</div>
+                      <div className="text-base font-black text-amber-600 font-mono mt-0.5">{MATRIX_STATS[activeTab].fp}</div>
                       <div className="text-[9px] text-slate-500 leading-tight mt-0.5">Safe traffic flagged</div>
                     </div>
                     {/* False Negatives */}
-                    <div className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/80">
-                      <div className="text-[10px] text-slate-500 uppercase font-semibold">False Negatives (FN)</div>
-                      <div className="text-base font-black text-rose-500 font-mono mt-0.5">{MATRIX_STATS[activeTab].fn}</div>
+                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                      <div className="text-[10px] text-slate-450 uppercase font-semibold">False Negatives (FN)</div>
+                      <div className="text-base font-black text-rose-650 font-mono mt-0.5">{MATRIX_STATS[activeTab].fn}</div>
                       <div className="text-[9px] text-slate-500 leading-tight mt-0.5">Threats missed</div>
                     </div>
                     {/* True Positives */}
-                    <div className="bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/80">
-                      <div className="text-[10px] text-slate-500 uppercase font-semibold">True Positives (TP)</div>
-                      <div className="text-base font-black text-emerald-400 font-mono mt-0.5">{MATRIX_STATS[activeTab].tp}</div>
+                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                      <div className="text-[10px] text-slate-450 uppercase font-semibold">True Positives (TP)</div>
+                      <div className="text-base font-black text-emerald-600 font-mono mt-0.5">{MATRIX_STATS[activeTab].tp}</div>
                       <div className="text-[9px] text-slate-500 leading-tight mt-0.5">Threats identified</div>
                     </div>
                   </div>
                 </div>
 
                 {activeTab === "rf" ? (
-                  <div className="text-xxs leading-relaxed text-slate-400 bg-slate-950/30 p-3 rounded-lg border border-slate-900">
+                  <div className="text-xxs leading-relaxed text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200">
                     <p>
                       <strong>Random Forest Performance:</strong> Achieved near-perfect classification. 
-                      A extremely low False Positive rate (<strong className="text-rose-400">0.5%</strong>) prevents SOC alert fatigue, 
-                      while a <strong className="text-indigo-400">99.97%</strong> recall restricts undetected malicious penetration to near-zero.
+                      A extremely low False Positive rate (<strong className="text-rose-650">0.5%</strong>) prevents SOC alert fatigue, 
+                      while a <strong className="text-indigo-650">99.97%</strong> recall restricts undetected malicious penetration to near-zero.
                     </p>
                   </div>
                 ) : (
-                  <div className="text-xxs leading-relaxed text-slate-400 bg-slate-950/30 p-3 rounded-lg border border-slate-900">
+                  <div className="text-xxs leading-relaxed text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200">
                     <p>
                       <strong>LSTM Sequence Performance:</strong> Maps chronological event sequences statefully. 
                       This prevents slow beaconing activities (APT lateral movements) from going undetected 

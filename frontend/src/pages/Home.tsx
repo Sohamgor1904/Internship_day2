@@ -93,13 +93,13 @@ export function Home() {
         height / 2,
         width / 1.5
       );
-      gradient.addColorStop(0, "#1E2429");
-      gradient.addColorStop(1, "#11161A");
+      gradient.addColorStop(0, "#F8FAFC");
+      gradient.addColorStop(1, "#F1F5F9");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
       // Draw connections
-      ctx.strokeStyle = "rgba(235, 0, 82, 0.07)";
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.05)";
       ctx.lineWidth = 1;
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
@@ -117,7 +117,7 @@ export function Home() {
       }
 
       // Draw particles
-      ctx.fillStyle = "rgba(235, 0, 82, 0.4)";
+      ctx.fillStyle = "rgba(99, 102, 241, 0.2)";
       for (const p of particles) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
@@ -227,24 +227,24 @@ export function Home() {
         
         {/* Content Overlay */}
         <div className="relative z-10 max-w-4xl mx-auto text-center px-4">
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 leading-tight animate-fade-in-up">
             Real-Time Threat Detection <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-indigo-800">
               Powered by OCSF
             </span>
           </h1>
-          <p className="mt-6 text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed animate-fade-in-up animation-delay-100">
             Protect your cloud infrastructure with an advanced 3-layer hybrid machine learning pipeline providing instant classifications, explanations, and sequential state verification.
           </p>
 
-          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-200">
             <Link to="/dashboard">
               <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-6 rounded-md shadow-lg shadow-indigo-600/30 flex items-center gap-2">
                 Enter Dashboard <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
             <a href="#why-it-matters">
-              <Button size="lg" variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-900/50 hover:text-white font-semibold px-8 py-6 rounded-md">
+              <Button size="lg" variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 font-semibold px-8 py-6 rounded-md">
                 Learn More
               </Button>
             </a>
@@ -252,17 +252,17 @@ export function Home() {
         </div>
 
         {/* Live Stat Ticker Banner */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-950/70 border-t border-slate-800/80 backdrop-blur-sm py-4">
-          <div className="max-w-7xl mx-auto px-4 flex flex-wrap justify-center md:justify-between items-center gap-4 text-xs font-mono text-indigo-300 tracking-wider">
+        <div className="absolute bottom-0 left-0 right-0 z-10 bg-white/80 border-t border-slate-200 shadow-xxs backdrop-blur-sm py-4">
+          <div className="max-w-7xl mx-auto px-4 flex flex-wrap justify-center md:justify-between items-center gap-4 text-xs font-mono text-indigo-600 tracking-wider">
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping" />
               <span>LIVE PIPELINE FEED STATUS</span>
             </div>
             <div className="flex flex-wrap justify-center gap-6 md:gap-10">
-              <span>EVENTS PROCESSED: <span className="text-white font-bold">{eventsProcessed.toLocaleString()}</span></span>
-              <span>THREATS CAUGHT: <span className="text-rose-400 font-bold">{threatsCaught}</span></span>
-              <span>DLQ SIZE: <span className="text-amber-400 font-bold">{dlqSize}</span></span>
-              <span>UPTIME: <span className="text-white font-bold">{formatUptime(uptime)}</span></span>
+              <span>EVENTS PROCESSED: <span className="text-slate-800 font-bold">{eventsProcessed.toLocaleString()}</span></span>
+              <span>THREATS CAUGHT: <span className="text-rose-600 font-bold">{threatsCaught}</span></span>
+              <span>DLQ SIZE: <span className="text-amber-600 font-bold">{dlqSize}</span></span>
+              <span>UPTIME: <span className="text-slate-800 font-bold">{formatUptime(uptime)}</span></span>
             </div>
           </div>
         </div>
@@ -283,8 +283,8 @@ export function Home() {
           {/* Stat Count-up Grid */}
           <div ref={countUpSectionRef} className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Card 1 */}
-            <div className="bg-white border border-slate-200 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow text-center">
-              <div className="text-5xl font-black text-slate-900 tracking-tight">
+            <div className="bg-white border border-slate-200 p-8 rounded-xl shadow-sm hover-lift text-center">
+              <div className="text-5xl font-black text-slate-850 tracking-tight">
                 ~{counts.firewall}%
               </div>
               <div className="text-sm font-semibold text-indigo-600 uppercase tracking-wider mt-2">
@@ -296,8 +296,8 @@ export function Home() {
             </div>
 
             {/* Card 2 */}
-            <div className="bg-white border border-indigo-100 p-8 rounded-xl shadow-md text-center ring-2 ring-indigo-500/10">
-              <div className="text-5xl font-black text-indigo-600 tracking-tight flex items-center justify-center gap-1">
+            <div className="bg-white border border-indigo-200 p-8 rounded-xl shadow-md text-center hover-lift">
+              <div className="text-5xl font-black text-indigo-650 tracking-tight flex items-center justify-center gap-1">
                 {counts.layers ? "3-Layer" : "0"}
               </div>
               <div className="text-sm font-semibold text-slate-800 uppercase tracking-wider mt-2">
@@ -312,8 +312,8 @@ export function Home() {
             </div>
 
             {/* Card 3 */}
-            <div className="bg-white border border-slate-200 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow text-center">
-              <div className="text-5xl font-black text-slate-900 tracking-tight">
+            <div className="bg-white border border-slate-200 p-8 rounded-xl shadow-sm hover-lift text-center">
+              <div className="text-5xl font-black text-slate-850 tracking-tight">
                 &lt;{counts.latency ? "50" : "0"}ms
               </div>
               <div className="text-sm font-semibold text-slate-800 uppercase tracking-wider mt-2">
@@ -340,7 +340,7 @@ export function Home() {
           </div>
 
           {/* Interactive Flow Diagram */}
-          <div className="bg-slate-950 text-slate-100 p-8 rounded-2xl border border-slate-800 max-w-5xl mx-auto shadow-xl">
+          <div className="bg-slate-50 text-slate-800 p-8 rounded-2xl border border-slate-200 max-w-5xl mx-auto shadow-sm">
             <div className="grid grid-cols-2 md:grid-cols-6 gap-3 relative z-10">
               {pipelineSteps.map((step, idx) => {
                 const StepIcon = step.icon;
@@ -351,11 +351,11 @@ export function Home() {
                     onClick={() => setActiveStep(idx)}
                     className={`p-4 rounded-xl border transition-all text-center flex flex-col items-center gap-3 ${
                       isActive 
-                        ? "bg-indigo-600/20 border-indigo-500 text-white shadow-lg shadow-indigo-500/10" 
-                        : "bg-slate-900/40 border-slate-800/80 text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+                        ? "bg-white border-indigo-500 text-indigo-750 shadow-md shadow-indigo-500/5" 
+                        : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 hover:border-slate-350"
                     }`}
                   >
-                    <div className={`p-2.5 rounded-lg ${isActive ? "bg-indigo-600 text-white" : "bg-slate-800 text-slate-400"}`}>
+                    <div className={`p-2.5 rounded-lg ${isActive ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"}`}>
                       <StepIcon className="w-5 h-5" />
                     </div>
                     <span className="text-xs font-semibold tracking-wide leading-tight">{step.title}</span>
@@ -365,12 +365,12 @@ export function Home() {
             </div>
 
             {/* Selected Step Tooltip Display */}
-            <div className="mt-8 p-5 bg-slate-900 rounded-xl border border-slate-800 animate-in fade-in slide-in-from-bottom-3 duration-200">
-              <span className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-widest">
+            <div className="mt-8 p-5 bg-white rounded-xl border border-slate-200 animate-in fade-in slide-in-from-bottom-3 duration-200">
+              <span className="text-xs font-mono font-bold text-indigo-650 uppercase tracking-widest">
                 STEP {activeStep + 1} OF 6
               </span>
-              <h4 className="text-lg font-bold text-white mt-1">{pipelineSteps[activeStep].title}</h4>
-              <p className="text-sm text-slate-400 mt-2 leading-relaxed">
+              <h4 className="text-lg font-bold text-slate-900 mt-1">{pipelineSteps[activeStep].title}</h4>
+              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
                 {pipelineSteps[activeStep].desc}
               </p>
             </div>
@@ -392,7 +392,7 @@ export function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* Card 1: Dashboard */}
-            <div className="bg-white border border-slate-200 p-6 rounded-xl hover:shadow-lg hover:border-indigo-100 transition-all flex flex-col justify-between">
+            <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm hover-lift flex flex-col justify-between">
               <div>
                 <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg w-fit">
                   <BarChart3 className="w-6 h-6" />
@@ -410,7 +410,7 @@ export function Home() {
             </div>
 
             {/* Card 2: Alerts */}
-            <div className="bg-white border border-slate-200 p-6 rounded-xl hover:shadow-lg hover:border-indigo-100 transition-all flex flex-col justify-between">
+            <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm hover-lift flex flex-col justify-between">
               <div>
                 <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg w-fit">
                   <AlertTriangle className="w-6 h-6" />
@@ -428,7 +428,7 @@ export function Home() {
             </div>
 
             {/* Card 3: Anomalies */}
-            <div className="bg-white border border-slate-200 p-6 rounded-xl hover:shadow-lg hover:border-indigo-100 transition-all flex flex-col justify-between">
+            <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm hover-lift flex flex-col justify-between">
               <div>
                 <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg w-fit">
                   <Search className="w-6 h-6" />
@@ -446,7 +446,7 @@ export function Home() {
             </div>
 
             {/* Card 4: DLQ */}
-            <div className="bg-white border border-slate-200 p-6 rounded-xl hover:shadow-lg hover:border-indigo-100 transition-all flex flex-col justify-between">
+            <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm hover-lift flex flex-col justify-between">
               <div>
                 <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg w-fit">
                   <Skull className="w-6 h-6" />
@@ -476,7 +476,7 @@ export function Home() {
             {["OCSF", "FastAPI", "Redis", "PostgreSQL", "PyTorch", "Scikit-Learn", "SHAP", "Prometheus"].map((tech) => (
               <span 
                 key={tech} 
-                className="text-lg font-bold text-slate-400 hover:text-indigo-500 transition-colors cursor-default select-none font-mono"
+                className="text-lg font-bold text-slate-400 hover:text-indigo-505 transition-colors cursor-default select-none font-mono"
               >
                 {tech}
               </span>
@@ -486,18 +486,18 @@ export function Home() {
       </section>
 
       {/* Footer (Section 7) */}
-      <footer className="bg-slate-950 text-slate-400 py-12 border-t border-slate-900">
+      <footer className="bg-slate-50 text-slate-500 py-12 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2 text-white font-bold">
-            <Shield className="w-5 h-5 text-indigo-400" />
-            <span>THREAT<span className="text-indigo-400">PULSE</span></span>
-            <span className="text-xs text-slate-600 ml-2">Built for SOC Teams</span>
+          <div className="flex items-center gap-2 text-slate-900 font-bold">
+            <Shield className="w-5 h-5 text-indigo-600" />
+            <span>THREAT<span className="text-indigo-600">PULSE</span></span>
+            <span className="text-xs text-slate-400 ml-2">Built for SOC Teams</span>
           </div>
 
           <div className="flex gap-6 text-sm">
-            <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">GitHub</a>
-            <a href="/docs" className="hover:text-white transition-colors">API Docs</a>
-            <a href="#" className="hover:text-white transition-colors flex items-center gap-1">
+            <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-indigo-600 transition-colors">GitHub</a>
+            <a href="/docs" className="hover:text-indigo-600 transition-colors">API Docs</a>
+            <a href="#" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
               Back to Top <Clock className="w-3.5 h-3.5" />
             </a>
           </div>

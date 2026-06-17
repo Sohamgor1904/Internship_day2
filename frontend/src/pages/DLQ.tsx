@@ -86,7 +86,7 @@ export function DLQ() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex">
       {/* Sidebar Nav */}
       <Sidebar />
 
@@ -94,44 +94,44 @@ export function DLQ() {
       <main className={`flex-1 transition-all duration-300 p-8 ${sidebarCollapsed ? "ml-16" : "ml-64"}`}>
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-6 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-6 border-b border-slate-200 animate-fade-in-up">
           <div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">Dead Letter Queue (DLQ) Monitor</h1>
-            <p className="text-xs text-slate-400 mt-1">Administer database transaction failures and control requeue pipelines.</p>
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Dead Letter Queue (DLQ) Monitor</h1>
+            <p className="text-xs text-slate-500 mt-1">Administer database transaction failures and control requeue pipelines.</p>
           </div>
           <button
             onClick={() => refetch()}
-            className="p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+            className="p-2 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 shadow-sm transition-colors"
           >
-            <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin text-indigo-400" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin text-indigo-600" : ""}`} />
           </button>
         </div>
 
         {/* Counter Widget & Admin controls */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8 items-start animate-fade-in-up animation-delay-100">
           
           {/* Depth Counter Card */}
-          <Card className="bg-slate-900/40 border-slate-800 lg:col-span-1">
+          <Card className="bg-white border-slate-200 shadow-sm hover-lift lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Queue Depth</CardTitle>
-              <Skull className={`w-5 h-5 ${dlqItems.length > 0 ? "text-amber-500 animate-bounce" : "text-slate-500"}`} />
+              <CardTitle className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Queue Depth</CardTitle>
+              <Skull className={`w-5 h-5 ${dlqItems.length > 0 ? "text-amber-600 animate-bounce" : "text-slate-400"}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-5xl font-black text-white">{dlqItems.length}</div>
-              <p className="text-xxs text-slate-500 mt-2">Currently isolated poison pill transaction blocks.</p>
+              <div className="text-5xl font-black text-slate-800">{dlqItems.length}</div>
+              <p className="text-xxs text-slate-400 mt-2">Currently isolated poison pill transaction blocks.</p>
             </CardContent>
           </Card>
 
           {/* Admin Controls Panel */}
-          <Card className="bg-slate-900/40 border-slate-800 lg:col-span-2">
+          <Card className="bg-white border-slate-200 shadow-sm hover-lift lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Queue Controls</CardTitle>
+              <CardTitle className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Queue Controls</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-4">
               <Button
                 onClick={() => requeueMutation.mutate()}
                 disabled={requeueMutation.isPending || dlqItems.length === 0}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center gap-2 px-6"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center gap-2 px-6 shadow"
               >
                 <Play className="w-4 h-4 fill-white" />
                 <span>Requeue Batch</span>
@@ -141,7 +141,7 @@ export function DLQ() {
                 onClick={() => clearMutation.mutate()}
                 disabled={clearMutation.isPending || dlqItems.length === 0}
                 variant="outline"
-                className="border-slate-800 text-slate-300 hover:bg-rose-950/20 hover:text-rose-400 hover:border-rose-900/50 font-semibold flex items-center gap-2 px-6"
+                className="border-slate-200 text-slate-650 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 font-semibold flex items-center gap-2 px-6"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>Purge DLQ</span>
@@ -152,19 +152,19 @@ export function DLQ() {
         </div>
 
         {/* DLQ Failure Items Table */}
-        <div className="mt-8 bg-slate-900/20 border border-slate-800 rounded-xl overflow-hidden">
-          <div className="p-5 border-b border-slate-800 flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-500" />
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Isolated Transaction Failures</h3>
+        <div className="mt-8 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden animate-fade-in-up animation-delay-200">
+          <div className="p-5 border-b border-slate-200 flex items-center gap-2 bg-slate-50">
+            <ShieldAlert className="w-4 h-4 text-amber-600" />
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Isolated Transaction Failures</h3>
           </div>
           
           <Table>
-            <TableHeader className="bg-slate-900/60 border-b border-slate-800">
-              <TableRow className="hover:bg-transparent border-slate-800">
-                <TableHead className="text-slate-400 font-semibold py-4 w-24 text-center">Retry Count</TableHead>
-                <TableHead className="text-slate-400 font-semibold w-48">First Failed At</TableHead>
-                <TableHead className="text-slate-400 font-semibold w-48">Last Failed At</TableHead>
-                <TableHead className="text-slate-400 font-semibold">Transaction Failure Reason</TableHead>
+            <TableHeader className="bg-slate-50 border-b border-slate-200">
+              <TableRow className="hover:bg-transparent border-slate-200">
+                <TableHead className="text-slate-500 font-semibold py-4 w-24 text-center">Retry Count</TableHead>
+                <TableHead className="text-slate-500 font-semibold w-48">First Failed At</TableHead>
+                <TableHead className="text-slate-500 font-semibold w-48">Last Failed At</TableHead>
+                <TableHead className="text-slate-500 font-semibold">Transaction Failure Reason</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -172,25 +172,25 @@ export function DLQ() {
                 dlqItems.map((item) => (
                   <TableRow 
                     key={item.id}
-                    className="border-slate-800 hover:bg-slate-900/30 transition-colors"
+                    className="border-slate-200 hover:bg-slate-55 transition-colors hover:bg-slate-50"
                   >
-                    <TableCell className="font-mono text-center font-bold text-amber-500 py-4.5">
+                    <TableCell className="font-mono text-center font-bold text-amber-600 py-4.5">
                       {item.retryCount}
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-slate-300">
+                    <TableCell className="font-mono text-xs text-slate-600">
                       {format(new Date(item.firstFailedAt), "yyyy-MM-dd HH:mm:ss")}
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-slate-300">
+                    <TableCell className="font-mono text-xs text-slate-600">
                       {format(new Date(item.lastFailedAt), "yyyy-MM-dd HH:mm:ss")}
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-slate-300 select-all leading-normal max-w-md truncate hover:text-white" title={item.failureReason}>
+                    <TableCell className="font-mono text-xs text-slate-600 select-all leading-normal max-w-md truncate hover:text-slate-900" title={item.failureReason}>
                       {item.failureReason}
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-12 text-slate-500 font-medium">
+                  <TableCell colSpan={4} className="text-center py-12 text-slate-400 font-medium">
                     Excellent! The Dead Letter Queue is currently empty.
                   </TableCell>
                 </TableRow>
@@ -198,7 +198,6 @@ export function DLQ() {
             </TableBody>
           </Table>
         </div>
-
       </main>
     </div>
   );
