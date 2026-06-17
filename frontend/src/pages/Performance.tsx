@@ -110,7 +110,6 @@ export function Performance() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
   const [isTerminalPaused, setIsTerminalPaused] = useState(false);
-  const terminalEndRef = useRef<HTMLDivElement | null>(null);
 
   // Initialize terminal simulation logs
   useEffect(() => {
@@ -138,11 +137,6 @@ export function Performance() {
           time: new Date().toLocaleTimeString()
         };
         
-        // Auto scroll to bottom
-        setTimeout(() => {
-          terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 50);
-
         return [...prev.slice(-30), newLog]; // Keep last 30 logs in buffer
       });
     }, 4000);
@@ -270,7 +264,6 @@ export function Performance() {
                   </div>
                 );
               })}
-              <div ref={terminalEndRef} />
             </div>
             <p className="text-xxs text-slate-500 mt-2 italic">Click on any log line in the console to inspect its security interpretation panel on the right.</p>
           </div>
