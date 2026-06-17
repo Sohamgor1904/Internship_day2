@@ -1,5 +1,7 @@
 # OCSF ThreatPulse: Hybrid Threat Detection Pipeline & SOC Dashboard
 
+**🌐 Live on Vercel:** [https://internship-day2.vercel.app/](https://internship-day2.vercel.app/)
+
 A high-performance, tiered security telemetry ingestion and threat detection pipeline normalized to the **Open Cybersecurity Schema Framework (OCSF)**. The system couples stateful statistical triage, machine learning classifiers, and sequential deep learning sequence models with a real-time, Splunk-inspired SOC Analyst Dashboard.
 
 ---
@@ -10,19 +12,19 @@ To minimize computational overhead and AI/ML evaluation costs, the pipeline rout
 
 ```mermaid
 graph TD
-    A[Raw Ingestion Logs] --> B[OCSF Normalisation v1.1.0]
-    B --> C[Layer 0: Whitelist & TCP Flags Check]
-    C -- Trusted/Obvious Flag Scan --> D[Drop / Instant Block]
-    C -- Promoted Anomalies --> E[Layer 1: Stateful Statistical Triage]
-    E -- Normal Traffic Drop --> F[Drop Event]
-    E -- Out-of-Bounds Score >= 2.5 --> G[Layer 2: Contextual Random Forest]
-    G -- Standalone Threat Detected --> H[SHAP Explainability Attributions]
-    G -- Inconclusive / Sequence Check --> I[Layer 3: Sequential PyTorch LSTM]
-    I -- Confirmed Alert --> J[Persistent DB Queue / Redis List]
-    J --> K[Async Batch Flusher Worker]
-    K -- Bulk Inserts --> L[PostgreSQL Alerts Table]
-    K -- Write Failures / Poison Pills --> M[Dead Letter Queue DLQ]
-    M --> N[Analyst Manual Requeue Controls]
+    A["Raw Ingestion Logs"] --> B["OCSF Normalisation v1.1.0"]
+    B --> C["Layer 0: Whitelist & TCP Flags Check"]
+    C -->|Trusted/Obvious Flag Scan| D["Drop / Instant Block"]
+    C -->|Promoted Anomalies| E["Layer 1: Stateful Statistical Triage"]
+    E -->|Normal Traffic Drop| F["Drop Event"]
+    E -->|"Out-of-Bounds Score >= 2.5"| G["Layer 2: Contextual Random Forest"]
+    G -->|Standalone Threat Detected| H["SHAP Explainability Attributions"]
+    G -->|"Inconclusive / Sequence Check"| I["Layer 3: Sequential PyTorch LSTM"]
+    I -->|Confirmed Alert| J["Persistent DB Queue / Redis List"]
+    J --> K["Async Batch Flusher Worker"]
+    K -->|Bulk Inserts| L["PostgreSQL Alerts Table"]
+    K -->|"Write Failures / Poison Pills"| M["Dead Letter Queue DLQ"]
+    M --> N["Analyst Manual Requeue Controls"]
 ```
 
 ### Ingestion & Normalization
