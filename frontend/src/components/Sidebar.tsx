@@ -7,7 +7,8 @@ import {
   Skull, 
   ChevronLeft, 
   ChevronRight, 
-  Shield
+  Shield,
+  BarChart3
 } from "lucide-react";
 
 export function Sidebar() {
@@ -18,6 +19,7 @@ export function Sidebar() {
     { path: "/alerts", label: "Threat Alerts", icon: ShieldAlert },
     { path: "/anomalies", label: "Anomaly Explorer", icon: Search },
     { path: "/dlq", label: "DLQ Monitor", icon: Skull },
+    { path: "/performance", label: "Model Performance", icon: BarChart3 },
   ];
 
   return (

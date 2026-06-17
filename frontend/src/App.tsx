@@ -6,6 +6,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { Alerts } from "./pages/Alerts";
 import { Anomalies } from "./pages/Anomalies";
 import { DLQ } from "./pages/DLQ";
+import { Performance } from "./pages/Performance";
 
 // Configure TanStack Query client with global refetch interval
 const queryClient = new QueryClient({
@@ -31,6 +32,7 @@ function App() {
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/anomalies" element={<Anomalies />} />
           <Route path="/dlq" element={<DLQ />} />
+          <Route path="/performance" element={<Performance />} />
         </Routes>
       </BrowserRouter>
       

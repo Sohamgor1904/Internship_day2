@@ -24,6 +24,7 @@ export function Navbar() {
     { label: "Alerts", path: "/alerts" },
     { label: "Anomalies", path: "/anomalies" },
     { label: "DLQ", path: "/dlq" },
+    { label: "Model Performance", path: "/performance" },
   ];
 
   return (
