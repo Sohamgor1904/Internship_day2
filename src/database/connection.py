@@ -141,7 +141,8 @@ class DatabaseHelper:
             try:
                 await self.redis_client.rpush("threat_alerts:queue", json.dumps(alert))
             except Exception as e:
-                logger.error(f"Failed to queue alert to Redis, falling back to in-memory queue: {e}")
+                logger.error(f"Failed to queue alert to Redis, dynamically disabling Redis client: {e}")
+                self.redis_client = None
                 await self.queue.put(alert)
         else:
             await self.queue.put(alert)
@@ -179,7 +180,8 @@ class DatabaseHelper:
                                     break
                                 batch.append(self.unwrap_item(json.loads(val)))
                     except Exception as e:
-                        logger.error(f"Error reading from Redis queue in flusher: {e}")
+                        logger.error(f"Error reading from Redis queue in flusher, dynamically disabling Redis client: {e}")
+                        self.redis_client = None
                         
                 # If Redis is not used/failed or returned nothing, check in-memory queue
                 if not batch:

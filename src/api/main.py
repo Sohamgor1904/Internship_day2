@@ -129,11 +129,14 @@ async def lifespan(app: FastAPI):
             )
             app.state.redis_client = aioredis.Redis(connection_pool=app.state.redis_pool)
             
+            # Ping Redis to verify connection before continuing
+            await app.state.redis_client.ping()
+            
             # Pass Redis Client to feature pipeline, LSTM model tracker, and DB helper
             feature_pipeline.redis_client = app.state.redis_client
             l3_lstm.redis_client = app.state.redis_client
             db.redis_client = app.state.redis_client
-            logger.info("Successfully established connection to Redis pool.")
+            logger.info("Successfully established connection to Redis pool and verified with ping.")
             # Trigger startup DLQ requeue task
             async def run_startup_dlq_requeue():
                 logger.info("[DLQ] Running startup DLQ requeue processing...")
@@ -223,7 +226,10 @@ async def detect_threat(record: OCSFNetworkTrafficSchema):
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error checking queue backpressure: {e}")
+            logger.error(f"Error checking queue backpressure, dynamically disabling Redis client: {e}")
+            app.state.redis_client = None
+            if hasattr(db, "redis_client"):
+                db.redis_client = None
             
     # Extract details for Layer 1 Triage
     time_ms = event_dict.get("time", 0)
@@ -452,7 +458,10 @@ async def ingest_log(record: OCSFNetworkTrafficSchema):
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error checking queue backpressure: {e}")
+            logger.error(f"Error checking queue backpressure, dynamically disabling Redis client: {e}")
+            app.state.redis_client = None
+            if hasattr(db, "redis_client"):
+                db.redis_client = None
     
     # Extract details for database logging
     time_ms = event_dict.get("time", 0)
@@ -511,13 +520,27 @@ async def health_check():
         l3_lstm.model is not None
     )
     
-    status_code = status.HTTP_200_OK if db_healthy and pipeline_healthy else status.HTTP_503_SERVICE_UNAVAILABLE
+    redis_healthy = False
+    if settings.USE_REDIS and hasattr(app.state, "redis_client") and app.state.redis_client:
+        try:
+            redis_healthy = await app.state.redis_client.ping()
+        except Exception:
+            redis_healthy = False
+            logger.error("Redis health check ping failed, dynamically disabling Redis client.")
+            app.state.redis_client = None
+            if hasattr(db, "redis_client"):
+                db.redis_client = None
+    elif not settings.USE_REDIS:
+        redis_healthy = True
+        
+    status_code = status.HTTP_200_OK if (db_healthy and pipeline_healthy and redis_healthy) else status.HTTP_503_SERVICE_UNAVAILABLE
     
     return {
         "status": "healthy" if status_code == status.HTTP_200_OK else "degraded",
         "components": {
             "database": "healthy" if db_healthy else "unhealthy",
-            "pipeline": "healthy" if pipeline_healthy else "unhealthy"
+            "pipeline": "healthy" if pipeline_healthy else "unhealthy",
+            "redis": "healthy" if redis_healthy else "unhealthy"
         }
     }
 
@@ -546,7 +569,11 @@ async def prometheus_metrics():
     if settings.USE_REDIS and hasattr(app.state, "redis_client") and app.state.redis_client:
         try:
             qsize = await app.state.redis_client.llen("threat_alerts:queue")
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error reading from Redis queue size, dynamically disabling Redis client: {e}")
+            app.state.redis_client = None
+            if hasattr(db, "redis_client"):
+                db.redis_client = None
             qsize = db.queue.qsize() if db.queue else 0
     else:
         qsize = db.queue.qsize() if db.queue else 0
